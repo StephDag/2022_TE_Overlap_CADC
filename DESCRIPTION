@@ -1,0 +1,21 @@
+Package: 2022_TE_Overlap_CADC
+Type: Package
+Title: The Title of the Project
+Version: 0.0.0.9000
+Authors@R: c(
+    person(given   = "Stephanie",
+           family  = "D'AGATA",
+           role    = c("aut", "cre", "cph"),
+           email   = "stephanie.dagata@gmail.com",
+           comment = c(ORCID = "0000-0001-6941-8489")))
+Description: A paragraph providing a full description of the project (on 
+    several lines...)
+URL: https://github.com/StephDag/2022_TE_Overlap_CADC
+BugReports: https://github.com/StephDag/2022_TE_Overlap_CADC/issues
+License: GPL (>= 2)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    devtools,
+    here
