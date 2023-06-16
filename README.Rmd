@@ -80,3 +80,15 @@ source("make.R")
 - All required packages, listed in the `DESCRIPTION` file, will be installed (if necessary)
 - All required packages and R functions will be loaded
 - Some analyses listed in the `make.R` might take time
+
+### Fixing link with github
+  # check link with github: 
+    git remote get-url origin
+  # if start with https: delete the link : 
+    git remote remove origin
+  # create new link
+    git remote add origin git@github.com:StephDag/2022_TE_Overlap_CADC.git
+  # 1st comit impossible to push
+    git push --set-upstream origin main
+  #
+
