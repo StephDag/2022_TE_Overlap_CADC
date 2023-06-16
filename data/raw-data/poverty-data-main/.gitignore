@@ -1,0 +1,38 @@
+# Environments.
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter notebook and checkpoints.
+*.ipynb
+.ipynb_checkpoints
+
+# Config files and folders.
+.idea
+
+# Data files that should not be included in git.
+*.html
+
+# Other files.
+.DS_Store
+*.pyc
+scratchpad.py
+
+# Keep in git only the csv file of the dataset, and ignore the json and xlsx files (they will only be stored in S3).
+datasets/pip_dataset.xlsx
+
+# Folders for data transformations
+data/
+old/
+functions/
+graphics/
+notebooks/
+pip_dataset_ppp2011.csv
+pip_dataset_ppp2017.csv
+temp/
+
+README_code.qmd
