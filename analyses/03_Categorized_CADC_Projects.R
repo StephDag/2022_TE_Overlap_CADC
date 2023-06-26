@@ -3,6 +3,9 @@
 CADC.db.filtered <- readRDS(here("data","derived-data","CADC.db.filtered.final.rds"))
 CADC.db.filtered %>% dim()
 
+
+unique(CADC.db.filtered$iati_identifier) %>% length()
+
 length(which(is.na(CADC.db.filtered$transaction_value)))
 
 # climate change /restoration projects

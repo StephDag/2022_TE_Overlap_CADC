@@ -19,7 +19,7 @@ keywords <- c("\\bcoast","\\bmarine","\\bocean","\\bblue","\\bfish","\\baquac","
               "seabed mining","oil and gas","\\bdesal","offshore","\\bport\\b","\\bshipping\\b","\\bbiotech","\\bpharmaceut","\\bbiochem") # 15850
 keywords <- c("\\bcoast","\\bmarine","\\bocean","\\bblue","\\bfish","\\baquac","coral","mangrove","seagrass","tidal marshes","nature-based","\\bmpa\\b","\\bamp\\b","\\blmma","conservation","\\btouris",
               "seabed mining","oil and gas","\\bdesal","offshore","\\bport\\b","\\bshipping\\b","\\bbiotech","\\bpharmaceut","\\bbiochem","plastic","tidal","\\bwave\\b","wastewater","climate",
-              "\\badapt","\\brestoration")  # 16500 about
+              "\\badapt","\\brestoration")  # 25000 about
 
 keywords_rm <- c("irrigation","drainage","earthquake","hospital")  # 13450
 
@@ -42,6 +42,10 @@ dim(CADC.db.filtered)
 
 # check
 #str_detect(CADC.db.filtered$description_narrative[1],keywords[26])
+
+x <- CADC.db.filtered %>% filter(is.na(location_point_pos))
+
+x[1:10,"description_narrative"]
 
 #### form to categorized the projects in different categories
 ## on the 14/06/2023 - need to include: I don't know for each, in case there is not enough information in the title or narrative to answer
