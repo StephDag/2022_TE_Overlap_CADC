@@ -5,6 +5,9 @@ eez <- read.csv(here("data","raw-data","List_territory","eez_territory_region.cs
 head(eez)
 dim(eez) # 221
 
+# iati list of countries
+ctr.iati <- read.csv(here("data","raw-data","Country.code.iati.csv"),stringsAsFactors = T,na.strings=NULL)
+
 # coastal countries
 ctr <- read.csv(here("data","raw-data","country-coastline-distance-master","coastlines.csv"))
 
@@ -25,11 +28,12 @@ head(coastal.ctr);tail(coastal.ctr)
 
 ## load names of cities for all countries and filter for only coastal countries
 # load geonames data for all countries
-#rm(geo.names)
-#geo.names <- read.delim2(here("data","raw-data","allCountries.txt"), header = F, sep = "\t", dec = ",")
-#colnames(geo.names) <- c("geonameid","name","asciiname","alternatenames","latitude","longitude","feature_class","feature_code","country_code","cc2","admin1_code",
-#                        "admin2_code","admin3_code","admin4_code","population","elevation","dem","timezone","modification_date")
-#dim(geo.names)
+# load ctry cities dataset
+#cities <- read.csv2(here("data","raw-data","allCountries.txt"),header=F,sep="\t")
+
+#colnames(cities) <- c("geonameid","name","asciiname","alternatenames","latitude","longitude","feature_class","feature_code","country_code","cc2","admin1_code",
+#                      "admin2_code","admin3_code","admin4_code","population","elevation","dem","timezone","modification_date")
+#head(cities)
 
 # colnames
 #geonameid         : integer id of record in geonames database
@@ -57,6 +61,6 @@ head(coastal.ctr);tail(coastal.ctr)
 #  filter(country_code %in% coastal.ctr$iso2)
 #dim(geo.names.coastal)
   # save
-#saveRDS(geo.names.coastal,here("data","derived-data","geo.names.coastal.rds"))
+#saveRDS(cities,here("data","derived-data","geo.names.coastal.rds"))
   # load
-geo.names.coastal <- readRDS(here("data","derived-data","geo.names.coastal.rds"))
+cities <- readRDS(here("data","derived-data","geo.names.coastal.rds"))

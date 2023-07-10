@@ -1,11 +1,12 @@
 # load packages for the project
-pacman::p_load(here,dplyr,janitor,tidyverse,tidytext,strex,fraser,star,readxl,ggpubr,scico,ggrepel)
-pacman::p_load(rnaturalearth,rnaturalearthdata,rnaturalearthhires,leaflet,sf,ggmap,rio,terra,maps,sp,wdpar)
-pacman::p_load(p_author(wordcloud,RColorBrewer,wordcloud2,tm))
+#pacman::p_load(here,dplyr,janitor,tidyverse,tidytext,strex,fraser,star,readxl,ggpubr,scico,ggrepel)
+#pacman::p_load(rnaturalearth,rnaturalearthdata,rnaturalearthhires,leaflet,sf,ggmap,rio,terra,maps,sp,wdpar)
+#pacman::p_load(p_author(wordcloud,RColorBrewer,wordcloud2,tm))
+#pacman::p_load(p_author(askgpt))
 
 x <- c("here","dplyr","janitor","tidyverse","tidytext","strex","fraser","star","readxl","ggpubr","scico","ggrepel",
        "rnaturalearth","rnaturalearthdata","rnaturalearthhires","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",
-       "wordcloud","RColorBrewer","wordcloud2","tm")
+       "wordcloud","RColorBrewer","wordcloud2","tm","askgpt")
 lapply(x, require, character.only = TRUE)
 
 # load CESAB IATI package
@@ -21,4 +22,8 @@ install_github("ropensci/geonames")
 library(rjson)
 library(geonames)
 
-
+# gptchatter
+install.packages(c("devtools", "openai"))
+library(devtools)
+install_github("isinaltinkaya/gptchatteR")
+library(gptchatteR)
