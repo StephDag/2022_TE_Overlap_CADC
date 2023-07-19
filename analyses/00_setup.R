@@ -15,12 +15,12 @@ lapply(x, require, character.only = TRUE)
 library("riati")
 
 # geonames packages
-install.packages("devtools") # if you don't have devtools yet
-require(devtools)
-install.packages("rjson") #-- gets this dependency from CRAN
-install_github("ropensci/geonames")
-library(rjson)
-library(geonames)
+#install.packages("devtools") # if you don't have devtools yet
+#require(devtools)
+#install.packages("rjson") #-- gets this dependency from CRAN
+#install_github("ropensci/geonames")
+#library(rjson)
+#library(geonames)
 
 # gptchatter
 install.packages(c("devtools", "openai"))
