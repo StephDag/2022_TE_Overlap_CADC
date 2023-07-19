@@ -20,11 +20,25 @@ ctry.list <- unique(all$iso_a2) %>% sort() # 179 countries
 start_time <- Sys.time() 
 
 # new data.frame to store cities/locations for each project that were cited in "descriptive_narrative"
-
 loc.projects.df.gps.final <- data.frame()
-  for (k in 1:length(ctry.list)){
-  #for (k in 8:8){
 
+# number of cores
+#n.cores <- parallel::detectCores() - 3
+#cl <-  parallel::makeCluster(
+#  n.cores, 
+#  type = "PSOCK"
+#)
+#print(cl)
+#doParallel::registerDoParallel(cl = cl)
+#foreach::getDoParRegistered() # check if registered
+
+  for (k in 1:length(ctry.list)){
+  #foreach (k=1:length(ctry.list)) %dopar% {
+  #foreach (k=1:2,
+  #         .packages='dplyr') %dopar%  {
+    
+    print(paste("Country =",ctry.list[k]))
+    print("FIRST LOOP")
     # select projects for k country
     temp.country <- all %>% filter(iso_a2 == ctry.list[k])
     
@@ -33,17 +47,39 @@ loc.projects.df.gps.final <- data.frame()
     temp.cities <- cities %>% filter(country_code == ctry.list[k])
     
     # combine the name, ascii and alternate names in one vector, and remove strings with parenthesis
+      # name
     temp.name <- temp.cities$name
-      temp.name <- temp.name[-grep(")",temp.name,fixed = TRUE)] %>% unique()
+        if (length(grep(")",temp.name,fixed = TRUE)) == 0)  {
+          temp.name = temp.name
+            } else {
+              temp.name = temp.name[-grep(")",temp.name,fixed = TRUE)]
+            }
+
+      # ascii
     temp.ascii <- temp.cities$asciiname
-      temp.ascii <- temp.ascii[-grep(")",temp.ascii,fixed = TRUE)] %>% unique()
-    temp.alt <- temp.cities$alternatenames
+          if (length(grep(")",temp.ascii,fixed = TRUE)) == 0)  {
+            temp.ascii = temp.ascii
+              } else {
+                temp.ascii = temp.ascii[-grep(")",temp.ascii,fixed = TRUE)]
+              }
+      # alternative names
+      temp.alt <- temp.cities$alternatenames
       temp.alt <- strsplit(temp.alt,",")  # several locations by row: split it into a list
       temp.alt <- unlist(temp.alt) # unlist --> a vector
-      temp.alt <- temp.alt[-grep(")",temp.alt,fixed = TRUE)] %>% unique() # rm parenthesis strings
+          if (length(grep(")",temp.alt,fixed = TRUE)) == 0)  {
+            temp.alt = temp.alt
+              } else {
+                temp.alt = temp.alt[-grep(")",temp.alt,fixed = TRUE)]
+              }
+    # combined vector
     temp.cities.comb <- c(temp.name,temp.ascii,temp.alt)
-      temp.cities.comb <- temp.cities.comb[-grep("(",temp.cities.comb,fixed = TRUE)]
     
+      if (length(grep("(",temp.cities.comb,fixed = TRUE)) == 0)  {
+        temp.cities.comb = temp.cities.comb
+      } else {
+        temp.cities.comb = temp.cities.comb[-grep("(",temp.cities.comb,fixed = TRUE)]
+      }
+ 
       # locations = combined all cities
       locations <-temp.cities.comb
 
@@ -52,11 +88,11 @@ loc.projects.df.gps.final <- data.frame()
     
     for (i in 1:dim(temp.country)[1]) {
     #for (i in 1:10) {
-    
+      
       print(paste("k=",k,"i=",i))
       
       # error handling
-      skip_to_next <- FALSE
+      #skip_to_next <- FALSE
       
       # Note that print(b) fails since b doesn't exist
       # extract locations names
@@ -90,6 +126,12 @@ loc.projects.df.gps.final <- data.frame()
       filter(!is.na(locations)) %>% 
       distinct() %>%
       filter(locations != ctry.list[k])# %>% # remove locations when it matches the country iso_a2
+    
+    # correct for Antigua and Barbuda
+    loc.projects.df$locations <- dplyr::case_when (
+      loc.projects.df$locations %in% c("Antigua","Barbuda") ~"Antigua and Barbuda",
+      TRUE ~ as.character(loc.projects.df$locations)
+    )
     # remove locations that are country in english 
     row_index <- which(loc.projects.df$locations %in% ctr$country == T & loc.projects.df$locations %in% ctry.cap == F)
     
@@ -104,14 +146,17 @@ loc.projects.df.gps.final <- data.frame()
     if (length(loc.unique) == 0) next 
     
     # seconde loop to retrieve the gps coordinates in the country cities list - avoid retrieving coordinates of same cities in another country
+    print("SECOND LOOP")
     for (j in 1:length(loc.unique)[1]){
     print(paste("k=",k,"j=",j))
-    # latitude
+    
+      # latitude
     temp.lat <-   temp.cities %>%
     mutate(combined = str_c(name, asciiname, alternatenames, sep = ' ')) %>%
     filter(str_detect(combined, paste0("\\b",loc.unique[j],"\\b"))) %>%
     select(latitude) %>% as.matrix()
-    # longitude
+    
+      # longitude
     temp.long <- temp.cities %>%
     mutate(combined = str_c(name, asciiname, alternatenames, sep = ' ')) %>%
     filter(str_detect(combined, paste0("\\b",loc.unique[j],"\\b"))) %>%
@@ -120,8 +165,6 @@ loc.projects.df.gps.final <- data.frame()
     df.temp = data.frame(locations=loc.unique[j],latitude=temp.lat[1],longitude=temp.long[1])
     latlong <- rbind(latlong,df.temp)
 
-    # clean objects
-    #rm(list=apropos("temp")[9:20])
     }
     loc.projects.df.gps <- left_join(loc.projects.df,latlong,by= "locations")
     loc.projects.df.gps.final <- rbind(loc.projects.df.gps.final,loc.projects.df.gps)
@@ -129,7 +172,7 @@ loc.projects.df.gps.final <- data.frame()
     #return(loc.projects.df.gps.final)
     gc()
   }
-
+#stopCluster(cl)
 saveRDS(loc.projects.df.gps.final,here("data","derived-data","loc.gps.projects.rds"))
 
 end_time <- Sys.time()
