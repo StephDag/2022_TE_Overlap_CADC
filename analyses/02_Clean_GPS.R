@@ -1,4 +1,5 @@
 # code to retrieve and correct GPS coordinates from the full database - in the descriptive narrative
+source(here::here("analyses","00_setup.R"))
 source(here::here("analyses","001_Coastal_countries.R")) # countries and cities
 source(here::here("R","find_locations.R"))
 
@@ -30,7 +31,7 @@ loc.projects.df.gps.final <- data.frame()
       # vector of cities, cleaned with parenthesis error, etc.
     temp.cities <- cities %>% filter(country_code == ctry.list[k])
     
-      # combine the name, ascii and alternate names
+    # combine the name, ascii and alternate names in one vector, and remove strings with parenthesis
     temp.name <- temp.cities$name; temp.name <- temp.name[-grep(")",temp.name)] %>% unique()
     temp.ascii <- temp.cities$asciiname; temp.ascii <- temp.ascii[-grep(")",temp.ascii)] %>% unique()
     temp.alt <- temp.cities$alternatenames; temp.alt <- strsplit(temp.alt,",") 
@@ -38,7 +39,7 @@ loc.projects.df.gps.final <- data.frame()
     temp.alt <- temp.alt[-grep(")",temp.alt)] %>% unique()
     temp.cities.comb <- c(temp.name,temp.ascii,temp.alt)
 
-      # clean parenthesis in temp.cities
+      # locations = combined all cities
       locations <-temp.cities.comb
 
     # list of projects with geographical locations
