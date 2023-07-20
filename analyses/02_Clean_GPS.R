@@ -23,20 +23,34 @@ start_time <- Sys.time()
 loc.projects.df.gps.final <- data.frame()
 
 # number of cores
-#n.cores <- parallel::detectCores() - 3
-#cl <-  parallel::makeCluster(
-#  n.cores, 
-#  type = "PSOCK"
-#)
-#print(cl)
-#doParallel::registerDoParallel(cl = cl)
-#foreach::getDoParRegistered() # check if registered
+n.cores <- 8
+cl <-  parallel::makeCluster(
+  n.cores, 
+  type = "PSOCK",
+  oufile = ""
+)
+print(cl)
+doParallel::registerDoParallel(cl = cl)
+foreach::getDoParRegistered() # check if registered
 
-  for (k in 1:length(ctry.list)){
-  #foreach (k=1:length(ctry.list)) %dopar% {
-  #foreach (k=1:2,
-  #         .packages='dplyr') %dopar%  {
-    
+# progress bar
+#pb <- txtProgressBar(min = 1, max = length(ctry.list), style = 3)
+#pb <- progress_bar$new(
+#  total = length(ctry.list),    # 100 
+#  width = 60)
+#progress_letter <- seq(1,length(ctry.list),1)  # token reported in progress bar
+# allowing progress bar to be used in foreach -----------------------------
+#progress <- function(n){
+#  pb$tick(tokens = list(letter = progress_letter[n]))
+#} 
+
+#opts <- list(progress = progress)
+
+  #for (k in 1:length(ctry.list)){
+result <-   foreach (k=1:length(ctry.list),
+#           .options.snow = opts,
+           .packages=c('dplyr','stringr','data.table')) %dopar% {
+    #setTxtProgressBar(pb, k) 
     print(paste("Country =",ctry.list[k]))
     print("FIRST LOOP")
     # select projects for k country
@@ -107,7 +121,7 @@ loc.projects.df.gps.final <- data.frame()
     names(loc.projects) <- temp.country$iati_identifier_bis[1:dim(temp.country)[1]]
     #names(loc.projects) <- temp.country$iati_identifier_bis[1:10]
     
-    ## dataframe with iati ide, name of cities
+    ## dataframe with iati id, name of cities
     loc.projects <- lapply(loc.projects, function(x) if(identical(x, character(0))) NA_character_ else x) # change character(0) to NAs
 
     # locations of project as dataframe (wide)
@@ -135,6 +149,7 @@ loc.projects.df.gps.final <- data.frame()
     # remove locations that are country in english 
     row_index <- which(loc.projects.df$locations %in% ctr$country == T & loc.projects.df$locations %in% ctry.cap == F)
     
+      # next loop if row_index= 0
     if (length(row_index) == 0) next 
     
     loc.projects.df <- loc.projects.df[-row_index,]
@@ -143,6 +158,7 @@ loc.projects.df.gps.final <- data.frame()
     latlong <- data.frame(locations=factor(),latitude=numeric(),longitude=numeric())
     loc.unique <- unique(loc.projects.df$locations) 
 
+      # next loop if no location
     if (length(loc.unique) == 0) next 
     
     # seconde loop to retrieve the gps coordinates in the country cities list - avoid retrieving coordinates of same cities in another country
@@ -164,16 +180,17 @@ loc.projects.df.gps.final <- data.frame()
     # store in a list
     df.temp = data.frame(locations=loc.unique[j],latitude=temp.lat[1],longitude=temp.long[1])
     latlong <- rbind(latlong,df.temp)
-
     }
+    
     loc.projects.df.gps <- left_join(loc.projects.df,latlong,by= "locations")
     loc.projects.df.gps.final <- rbind(loc.projects.df.gps.final,loc.projects.df.gps)
-    saveRDS(loc.projects.df.gps.final,here("data","derived-data","loc.gps.projects.rds"))
-    #return(loc.projects.df.gps.final)
+    #saveRDS(loc.projects.df.gps.final,here("data","derived-data","loc.gps.projects.rds"))
+    return(loc.projects.df.gps.final)
     gc()
   }
-#stopCluster(cl)
 saveRDS(loc.projects.df.gps.final,here("data","derived-data","loc.gps.projects.rds"))
+#close(pb)
+stopCluster(cl) 
 
 end_time <- Sys.time()
 end_time - start_time
