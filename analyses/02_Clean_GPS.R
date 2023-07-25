@@ -23,35 +23,12 @@ start_time <- Sys.time()
 loc.projects.df.gps.final <- data.frame()
 
 # number of cores
-n.cores <- 8
-cl <-  parallel::makeCluster(
-  n.cores, 
-  type = "PSOCK",
-  oufile = ""
-)
-print(cl)
-doParallel::registerDoParallel(cl = cl)
-foreach::getDoParRegistered() # check if registered
+n.cores <- 20
 
-# progress bar
-#pb <- txtProgressBar(min = 1, max = length(ctry.list), style = 3)
-#pb <- progress_bar$new(
-#  total = length(ctry.list),    # 100 
-#  width = 60)
-#progress_letter <- seq(1,length(ctry.list),1)  # token reported in progress bar
-# allowing progress bar to be used in foreach -----------------------------
-#progress <- function(n){
-#  pb$tick(tokens = list(letter = progress_letter[n]))
-#} 
+  for (k in 1:length(ctry.list)){
 
-#opts <- list(progress = progress)
 
-  #for (k in 1:length(ctry.list)){
-result <-   foreach (k=1:length(ctry.list),
-#           .options.snow = opts,
-           .packages=c('dplyr','stringr','data.table')) %dopar% {
-    #setTxtProgressBar(pb, k) 
-    print(paste("Country =",ctry.list[k]))
+    print(paste("Country =",ctry.list[k],"k=",k))
     print("FIRST LOOP")
     # select projects for k country
     temp.country <- all %>% filter(iso_a2 == ctry.list[k])
@@ -93,17 +70,21 @@ result <-   foreach (k=1:length(ctry.list),
       } else {
         temp.cities.comb = temp.cities.comb[-grep("(",temp.cities.comb,fixed = TRUE)]
       }
- 
+    temp.cities.comb <- gsub("\\(", "", temp.cities.comb)
+    temp.cities.comb <-gsub("\\)", "", temp.cities.comb)
+    
       # locations = combined all cities
       locations <-temp.cities.comb
 
     # list of projects with geographical locations
     loc.projects=list()
-    
-    for (i in 1:dim(temp.country)[1]) {
+
+    loc.projects <- mclapply(X=temp.country[,"description_narrative"],FUN=find_locations, locations = locations,mc.cores=n.cores)
+
+    #for (i in 1:dim(temp.country)[1]) {
     #for (i in 1:10) {
       
-      print(paste("k=",k,"i=",i))
+      #print(paste("k=",k,"i=",i))
       
       # error handling
       #skip_to_next <- FALSE
@@ -111,13 +92,11 @@ result <-   foreach (k=1:length(ctry.list),
       # Note that print(b) fails since b doesn't exist
       # extract locations names
       
-      loc.projects[[i]] <- find_locations(temp.country[i,"description_narrative"],locations)
+      #loc.projects[[i]] <- find_locations(temp.country[i,"description_narrative"],locations)
       #tryCatch(loc.projects[[i]] <- find_locations(temp.country[i,"description_narrative"],locations), error = function(e) { skip_to_next <<- TRUE})
       
       #if(skip_to_next) { loc.projects[[i]] = NA }   
     
-    }
-
     names(loc.projects) <- temp.country$iati_identifier_bis[1:dim(temp.country)[1]]
     #names(loc.projects) <- temp.country$iati_identifier_bis[1:10]
     
@@ -185,14 +164,8 @@ result <-   foreach (k=1:length(ctry.list),
     loc.projects.df.gps <- left_join(loc.projects.df,latlong,by= "locations")
     loc.projects.df.gps.final <- rbind(loc.projects.df.gps.final,loc.projects.df.gps)
     #saveRDS(loc.projects.df.gps.final,here("data","derived-data","loc.gps.projects.rds"))
-    return(loc.projects.df.gps.final)
+    #return(loc.projects.df.gps.final)
     gc()
   }
 saveRDS(loc.projects.df.gps.final,here("data","derived-data","loc.gps.projects.rds"))
-#close(pb)
-stopCluster(cl) 
-
-end_time <- Sys.time()
-end_time - start_time
-
 
