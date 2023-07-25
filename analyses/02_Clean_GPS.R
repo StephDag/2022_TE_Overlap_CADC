@@ -2,9 +2,10 @@
 source(here::here("analyses","00_setup.R"))
 source(here::here("analyses","001_Coastal_countries.R")) # countries and cities
 source(here::here("R","find_locations.R"))
-
+source("analyses/02_Clean_GPS.R")
 # load raw data
-all <- readRDS(here("data","derived-data","CADC.db.final.rds"))
+#all <- readRDS(here("data","derived-data","CADC.db.final.rds"))
+all <- readRDS("/media/seagate/sdagata/CADC.db.final.rds")
 
 # cities  - loaded from source file
 head(cities)
@@ -25,7 +26,8 @@ loc.projects.df.gps.final <- data.frame()
 # number of cores
 n.cores <- 20
 
-  for (k in 1:length(ctry.list)){
+  #for (k in 1:length(ctry.list)){
+for (k in 1:2){
 
 
     print(paste("Country =",ctry.list[k],"k=",k))
