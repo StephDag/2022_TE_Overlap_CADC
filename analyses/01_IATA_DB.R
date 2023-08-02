@@ -22,7 +22,7 @@ for (i in 1:length(ctr)) {
   print(paste("i=",i))
   
   # query for i coastal country
-  temp.query <- paste0("recipient_country_code:(",ctr[i],")") # query for each country 
+  temp.query <- paste0("recipient_country_code:(",ctr[i],") OR transaction_recipient_country_code:(",ctr[i],")") # query for each country 
 
   # retrieve full dataset for i country
   temp <- try(get_records(temp.query, collection = "activity") ) # retrieving the full database without filters, skip errors when country is not in the database)
