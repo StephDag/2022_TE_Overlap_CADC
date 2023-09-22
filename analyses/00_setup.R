@@ -1,13 +1,13 @@
 # load packages for the project
-#pacman::p_load(here,dplyr,janitor,tidyverse,tidytext,strex,fraser,star,readxl,ggpubr,scico,ggrepel)
-#pacman::p_load(rnaturalearth,rnaturalearthdata,rnaturalearthhires,leaflet,sf,ggmap,rio,terra,maps,sp,wdpar)
-#pacman::p_load(p_author(wordcloud,RColorBrewer,wordcloud2,tm))
-#pacman::p_load(p_author(askgpt))
+pacman::p_load(here,dplyr,janitor,tidyverse,tidytext,strex,fraser,star,readxl,ggpubr,scico,ggrepel)
+pacman::p_load(rnaturalearth,rnaturalearthdata,rnaturalearthhires,leaflet,sf,ggmap,rio,terra,maps,sp,wdpar)
+pacman::p_load(wordcloud,RColorBrewer,wordcloud2,tm,dbscan,rgeoboundaries)
 
 x <- c("here","dplyr","janitor","tidyverse","tidytext","strex","readxl","ggpubr","scico","ggrepel",
        "rnaturalearth","rnaturalearthdata","rnaturalearthhires","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",
        "wordcloud","RColorBrewer","wordcloud2","tm","data.table","rutils",
-       "foreach","doParallel","doSNOW","tcltk","svMisc","elevatr")
+       "foreach","doParallel","doSNOW","tcltk","svMisc","elevatr",
+       "dbscan","rgeoboundaries")
 lapply(x, require, character.only = TRUE)
 
 # load CESAB IATI package
@@ -31,3 +31,7 @@ lapply(x, require, character.only = TRUE)
 
 # rutils CESAB
 #remotes::install_github("frbcesab/rutils")
+
+#library(remotes)
+#remotes::install_github("wmgeolab/rgeoboundaries")
+

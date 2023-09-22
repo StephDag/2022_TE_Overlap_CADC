@@ -10,6 +10,7 @@ ctr.iati <- read.csv(here("data","raw-data","Country.code.iati.csv"),stringsAsFa
 
 # coastal countries
 ctr <- read.csv(here("data","raw-data","country-coastline-distance-master","coastlines.csv"))
+ctr[which(ctr$iso2 == ""),"iso2"] <- c("NA","AN","PS")
 
 rm(coastal.ctr)
 coastal.ctr <- ctr %>% filter(coastline_wf >0)

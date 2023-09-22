@@ -1,8 +1,36 @@
 # code to retrieve and correct GPS coordinates from the full database - in the descriptive narrative
 source(here::here("analyses","001_Coastal_countries.R")) # load countries and cities in countries
 
-# load raw data
-all <- readRDS(here("data","raw-data","CADC.rds")) # 504348    254
+# load raw data - all countries
+#all <- readRDS(here("data","raw-data","CADC.rds")) # 633735    284
+ all <- readRDS("/media/seagate/sdagata/CADC.rds")
+
+# filter by coastal countries
+#all.coastal <- all %>%
+#  filter(recipient_country_code %in% coastal.ctr$iso2  | str_detect(transaction_recipient_country_code,coastal.ctr$iso2))
+#dim(all.coastal)
+
+#length(unique(all.coastal$iati_identifier)) # 313927 countries
+#length(c(unique(all.coastal$recipient_country_code),unique(all.coastal$transaction_recipient_country_code))) # 181
+
+#all.loc <- all %>% 
+#  select(recipient_country_code,iati_identifier) %>%
+#  distinct() %>%
+#  group_by(recipient_country_code) %>%
+#  summarize(n =n()) %>% 
+#  as.data.frame()
+
+# for iati
+#BD <- all[which(str_detect("BD",all$recipient_country_code)),]
+#BD$description_narrative <- gsub('\n', '', BD$description_narrative )
+#write.csv2(all[which(str_detect("ID",all$recipient_country_code)),], here("data","raw-data","IATI_Indonesia.txt"))
+#write.csv2(all[which(str_detect("AL",all$recipient_country_code)),], here("data","raw-data","IATI_Albania.txt"))
+#write.csv2(all[which(str_detect("BD",all$recipient_country_code)),], here("data","raw-data","IATI_Bangladesh.txt"))
+
+#saveRDS(all[which(str_detect("ID",all$recipient_country_code)),], here("data","raw-data","IATI_Indonesia.rds"))
+#saveRDS(all[which(str_detect("AL",all$recipient_country_code)),], here("data","raw-data","IATI_Albania.rds"))
+#saveRDS(all[which(str_detect("BD",all$recipient_country_code)),], here("data","raw-data","IATI_Bangladesh.rds"))
+
 
 #which(grepl("MG", all$recipient_country_code, fixed=TRUE))
 #test <- all[which(grepl("MG", all$recipient_country_code, fixed=TRUE)),]
@@ -15,7 +43,7 @@ all <- readRDS(here("data","raw-data","CADC.rds")) # 504348    254
 #test$recipient_country_code
 # remove duplicated projects
 CADC <- all %>%
-  dplyr::distinct() # 456723    254
+  dplyr::distinct() # 548735    284
 
 # unique country vector
 ctry <- unique(ctr$iso2)
@@ -33,7 +61,7 @@ CADC.db <- CADC %>%
   mutate(nstring_pos = str_count(location_point_pos, pattern = " ")) # count number of elements in pos vector
 
 ### check. why duplicated projects
-length(unique(CADC.db$iati_identifier)) # 408644
+length(unique(CADC.db$iati_identifier)) # 475478
 #duplicated(CADC.db$iati_identifier) %>% which()
 #CADC.db[c(19,22),]
   # beg/end of projects (final reports reported for ex) -> only consider the unique number of projects = 408644 unique projects (but can happen in several countries)
@@ -41,13 +69,13 @@ length(unique(CADC.db$iati_identifier)) # 408644
 ### how many countries with only GPS locations
 rm(CADC.db.gps)
 CADC.db.gps <- CADC.db %>%
-  filter(!is.na(location_point_pos)) %>%
-  mutate(n_ctry = str_length(recipient_country_code)) %>% # when 1 country per row,  (2 = number of strings in the cell)
-  dplyr::filter(n_ctry == 2 & recipient_country_code %in% coastal.ctr$iso2) # keep only the coastal countries # 148391    256
+  filter(!is.na(location_point_pos)) # %>% # 230991    285
+  #mutate(n_ctry.1 = str_length(recipient_country_code)) %>% # when 1 country per row only,  (2 = number of strings in the cell)
+  #mutate(n_ctry.2 = str_length(transaction_recipient_country_code)) #%>%
+  #dplyr::filter(n_ctry.1 == 2 | n_ctry.2 == 2 & recipient_country_code %in% coastal.ctr$iso2 | transaction_recipient_country_code %in% coastal.ctr$iso2) # keep only the coastal countries # 148391    256
 
-  
 #  filter(is.na(location_name_narrative))
-#unique(CADC.db.gps$iati_identifier) %>% length() # 138922
+#unique(CADC.db.gps$iati_identifier) %>% length() # 207483
 #CADC.db.loc <- CADC.db %>%
 #  filter(!is.na(location_name_narrative)) %>%
 #  filter(is.na(location_point_pos))
@@ -83,14 +111,14 @@ list.gps <- list.gps[-which(is.odd(sapply(list.gps,length)))]
 # remove NULL list
 #### WARNING "BE-BCE_KBO-0413119733-PROG2017-2021_SDI10-HAI" - coordonnées pas en decimal
 ### check certain lat/long are too large : on the 14/06/2023
-list.gps <- compact(list.gps) # Remove all NULL entries from a list
+list.gps <- compact(list.gps) # Remove all NULL entries from a list 228513
 
 # split each element of the list into sublist - a loop for now, can probably do better later with lapply - but no time (30/05/2023)
 list.gps.full <- data.frame()
 
 for (i in 1:length(list.gps)){
   
-  print(paste("i=",i))
+  print(paste("i=",i,"perc=",round(100*i/228513,2),"%"))
   
   df.temp =matrix(as.numeric(list.gps[[i]]), ncol=2, byrow = T)
   
@@ -115,16 +143,16 @@ _# remove NAs in longitude and latitude
 list.gps.full <-  list.gps.full %>%   
   mutate(longitude = as.numeric(longitude), latitude=as.numeric(latitude)) %>%
   dplyr::filter(!is.na(longitude),!is.na(latitude))    
-# 448751      4
+# 590206      4
 
 #list.gps.full %>% filter(iati_identifier == "FR-6-BR-pas de code prisme - subvention")
 
 ## remove distinct projects/gps
 list.gps.full <- list.gps.full %>%
-  distinct() #419546      4
+  distinct() # 474665      4
 
-length(unique(list.gps.full$iati_identifier)) # 187643 - unique projects with GPS coordinates
-length(unique(list.gps.full$iati_identifier_bis)) # 419492
+length(unique(list.gps.full$iati_identifier)) # 205201 - unique projects with GPS coordinates
+length(unique(list.gps.full$iati_identifier_bis)) # 474584
 
 # look for issues in gps
 #list.gps.full[which(list.gps.full$latitude >180),]
@@ -148,7 +176,7 @@ world.2 <- ne_countries(type = "countries", scale = "large")
 #points(CADC.db.filtered.gps.proj.sp,ylim=c(-180,180),ylim=c(-90,90))
 
 # overlay points and countries to retrieve country information - still NAs since some points are outside the polygons
-ctry.over <- over(list.gps.full.proj, world.2) #419546    168
+ctry.over <- over(list.gps.full.proj, world.2) # 474665    168
 # which(is.na(ctry.over$sovereignt))  %>% length()
 
 #list.gps.full.proj[4787,]
@@ -164,7 +192,9 @@ list.gps.full.ctry <- cbind(list.gps.full,ctry.over %>% select(type,admin,iso_a2
 rm(list.gps.full.ctry.coast)
 list.gps.full.ctry.coast <- list.gps.full.ctry %>%
   mutate(iso_a2 = as.factor(iso_a2)) %>% 
-  filter(list.gps.full.ctry$iso_a2 %in% coastal.ctr$iso2) # 291899     19
+  filter(list.gps.full.ctry$iso_a2 %in% coastal.ctr$iso2) # 314601     19
+
+saveRDS(list.gps.full.ctry.coast,here("data","derived-data","list.gps.full.ctry.coast.rds"))
 
 n.location.iati.ID <- list.gps.full.ctry.coast %>% select(iati_identifier,iati_identifier_bis) %>%
   mutate(iati_identifier = as.factor(iati_identifier),iati_identifier_bis = as.factor(iati_identifier_bis)) %>%
@@ -176,10 +206,10 @@ n.location.iati.ID <- list.gps.full.ctry.coast %>% select(iati_identifier,iati_i
 #########################################
 
 # less gps data (XX gps locations) than projects (XX), since not all the projects have gps information
-dim(CADC.db) # 456723    255
-length(unique(CADC.db$iati_identifier)) # 408644 unique projects in the full database
-dim(list.gps.full.ctry)  # 419546     19
-length(unique(list.gps.full.ctry$iati_identifier)) # 187643 unique projects with GPS locations - 8046 with no country information, since lat/long are not correct
+dim(CADC.db) # 548735    285
+length(unique(CADC.db$iati_identifier)) # 475478 unique projects in the full database
+dim(list.gps.full.ctry)  # 474665     19
+length(unique(list.gps.full.ctry$iati_identifier)) # 205201 unique projects with GPS locations - XX with no country information, since lat/long are not correct
 
 # extract latitude and longitude from the list
 CADC.db.V2 <- CADC.db %>%
@@ -202,42 +232,47 @@ CADC.db.V2 <- CADC.db %>%
 #rm(CADC.db.V3)
 #CADC.db.V3 <- readRDS(here("data","derived-data","CADC.db.V3.rds"))
 
-# remove data with GPS
+# remove data with GPS and filter when only one country in recipient country
 rm(CADC.db.gps.NA)
 CADC.db.gps.NA <- CADC.db %>%
   dplyr::filter(is.na(location_point_pos)) %>%
-  mutate(n_ctry = str_length(recipient_country_code)) %>% # when 1 country per row,  (2 = numner of strings in the cell)
-  dplyr::filter(n_ctry == 2 & recipient_country_code %in% coastal.ctr$iso2) # keep only the coastal countries
+  mutate(n_ctry.1 = str_length(recipient_country_code)) %>% # when 1 country per row,  (2 = numner of strings in the cell)
+  mutate(n_ctry.2 = str_length(transaction_recipient_country_code)) %>% # when 1 country per row,  (2 = numner of strings in the cell)
+  dplyr::filter(n_ctry.1 == 2 | n_ctry.2 == 2 & recipient_country_code %in% coastal.ctr$iso2) # keep only the coastal countries
+    # 242370    287
 
 # split the country list
-rm(CTRY.list.db)
-CTRY.list.db =strsplit(as.character(CADC.db.gps.NA$recipient_country_code),split=' | ',fixed=T)
+rm(CTRY.list.db.1) # from recipient code
+CTRY.list.db.1 =strsplit(as.character(CADC.db.gps.NA$recipient_country_code),split=' | ',fixed=T)
+rm(CTRY.list.db.2) # from transaction recipient code
+CTRY.list.db.2 =strsplit(as.character(CADC.db.gps.NA$transaction_recipient_country_code),split=' | ',fixed=T)
+
 #MONEY.list.db =strsplit(as.character(CADC.db.gps.NA$transaction_value),split=' | ',fixed=T)
 
 # names the list - each element of the list = unique ID of the project
-names(CTRY.list.db) <- CADC.db.gps.NA$iati_identifier
+names(CTRY.list.db.1) <- CADC.db.gps.NA$iati_identifier
+names(CTRY.list.db.2) <- CADC.db.gps.NA$iati_identifier
+
+# remove NAs
+CTRY.list.db.1 <- CTRY.list.db.1[!is.na(CTRY.list.db.1)]
+CTRY.list.db.1 <- lapply(CTRY.list.db.1,unique)
+CTRY.list.db.2 <- CTRY.list.db.2[!is.na(CTRY.list.db.2)]
+CTRY.list.db.2 <- lapply(CTRY.list.db.2,unique)
+  # 
 
 # list to long format dataframe for countries by iati IDs
-rm(df)
-df <- as.data.frame(do.call(cbind,CTRY.list.db)) %>% t() # 251505    175
+rm(df.1)
+df.1 <- as.data.frame(do.call(cbind,CTRY.list.db.1)) %>% t() # 251505    175
+df.1 <- stack(CTRY.list.db.1)
+df.2 <- stack(CTRY.list.db.2)# 251505
 
-# cbind project names and the dataframe
-df <- cbind(as.character(rownames(df)),df)
-rownames(df) <- NULL
-df <- as.data.frame(df)
-names(df)[1] <- "iati_identifier" # 168406      2
-names(df)[2] <- "iso_a2" # 168406      2
-
-# wide to long
-rm(df_long)
-df_long <- df %>% tidyr::gather(key = variable,iso_a2, -iati_identifier,factor_key=T,convert=T) %>%
-  select(-variable) %>% 
-  distinct() %>%
-  mutate(iso_a2=as.factor(iso_a2)) %>% # remove duplicate countries for each project 
-  mutate(iati_identifier=as.factor(iati_identifier)) # 218919 unique projects, 239 countries # 260640      2
+  # unique country df
+df<- rbind(df.1,df.2) %>% distinct() #220905      2
+df <- df[,c("ind","values")] 
+names(df) <- c("iati_identifier", "iso_a2")
 
 # create unique project identifier for each project and country
-df_long <- df_long %>%
+df <- df %>%
   mutate(iati_identifier_bis = paste0(iati_identifier,"_",iso_a2))
 
 #rm(df_long_n)
@@ -248,11 +283,12 @@ df_long <- df_long %>%
 
 # add non gps country information
 rm(CADC.db.ctr)
-CADC.db.ctr <- left_join(CADC.db.gps.NA,df_long,by="iati_identifier",relationship="many-to-many") %>% # many 2 many since there are duplicates iati-identifier
+CADC.db.ctr <- left_join(CADC.db.gps.NA,df,by="iati_identifier",relationship="many-to-many") %>% # many 2 many since there are duplicates iati-identifier
                     filter(iso_a2 %in% coastal.ctr$iso2) # filter coastal countries
 
+  # add country information
 CADC.db.ctr <- left_join(CADC.db.ctr,as.data.frame(world.2) %>% select(type,admin,iso_a2,iso_a3,pop_est,pop_rank,pop_year,gdp_year,income_grp,region_un,region_wb),by="iso_a2")
-dim(CADC.db.ctr) # 168946    268
+dim(CADC.db.ctr) # 177575    299
 head(CADC.db.ctr) 
 
 #CADC.db.ctr %>% select(iati_identifier,recipient_country_code,iso_a2,iati_identifier_bis) %>% head()
@@ -260,18 +296,19 @@ head(CADC.db.ctr)
 
 ## bind gps and non_gps data
 CADC.db.ctr.gps <- right_join(CADC.db.gps,list.gps.full.ctry.coast,by="iati_identifier",relationship="many-to-many") # many 2 many since there are duplicates iati-identifier 
-              # 311373    273
+              # 362798    303
 #CADC.db.ctr.gps %>% select(iati_identifier,recipient_country_code,iso_a2,iati_identifier_bis,latitude,longitude) %>% tail(1000)
 # merge the non-GPS and GPS data - should be about 734413 rows
 CADC.db.final <- bind_rows(CADC.db.ctr,CADC.db.ctr.gps)
-dim(CADC.db.final)
+dim(CADC.db.final) # 
 summary(as.data.frame(CADC.db.final$longitude))
-
+summary(as.factor(CADC.db.final$iso_a2))
+which(is.na(CADC.db.final$iso_a2))
 #########################################
 #                   Save                #
 #########################################
 
-saveRDS(CADC.db.final, here("data","derived-data","CADC.db.final.rds"))
+saveRDS(CADC.db.final, here("data","derived-data","CADC.db.final.rds")) # 540373
 
 # number of countries
 length(unique(CADC.db.final$iso_a2)) # 179 countries

@@ -2,10 +2,22 @@
 source(here::here("analyses","00_setup.R"))
 source(here::here("analyses","001_Coastal_countries.R")) # countries and cities
 source(here::here("R","find_locations.R"))
-source("analyses/02_Clean_GPS.R")
+#source("analyses/02_Clean_GPS.R")
 # load raw data
 #all <- readRDS(here("data","derived-data","CADC.db.final.rds"))
 all <- readRDS("/media/seagate/sdagata/CADC.db.final.rds")
+
+all.loc <- all %>% 
+  select(iso_a2,iati_identifier) %>%
+  distinct() %>%
+ group_by(iso_a2) %>%
+  summarize(n =n()) %>% 
+  as.data.frame()
+
+all.ID <- all %>% 
+  filter(iso_a2 == "ID")
+  summarize(n =n()) %>% 
+  as.data.frame()
 
 # cities  - loaded from source file
 head(cities)
@@ -24,11 +36,11 @@ start_time <- Sys.time()
 loc.projects.df.gps.final <- data.frame()
 
 # number of cores
-n.cores <- 20
+n.cores <- 40
 
-  #for (k in 1:length(ctry.list)){
-for (k in 1:2){
 
+for (k in 71:length(ctry.list)){ # 70 is still with issues
+#for (k in 1:2){
 
     print(paste("Country =",ctry.list[k],"k=",k))
     print("FIRST LOOP")
@@ -42,66 +54,65 @@ for (k in 1:2){
     # combine the name, ascii and alternate names in one vector, and remove strings with parenthesis
       # name
     temp.name <- temp.cities$name
-        if (length(grep(")",temp.name,fixed = TRUE)) == 0)  {
+        if (length(grep("\\)",temp.name,fixed = TRUE)) == 0)  {
           temp.name = temp.name
             } else {
-              temp.name = temp.name[-grep(")",temp.name,fixed = TRUE)]
+              temp.name = temp.name[-grep("\\)",temp.name,fixed = TRUE)]
             }
 
       # ascii
     temp.ascii <- temp.cities$asciiname
-          if (length(grep(")",temp.ascii,fixed = TRUE)) == 0)  {
+          if (length(grep("\\)",temp.ascii,fixed = TRUE)) == 0)  {
             temp.ascii = temp.ascii
               } else {
-                temp.ascii = temp.ascii[-grep(")",temp.ascii,fixed = TRUE)]
+                temp.ascii = temp.ascii[-grep("\\)",temp.ascii,fixed = TRUE)]
               }
       # alternative names
       temp.alt <- temp.cities$alternatenames
       temp.alt <- strsplit(temp.alt,",")  # several locations by row: split it into a list
       temp.alt <- unlist(temp.alt) # unlist --> a vector
-          if (length(grep(")",temp.alt,fixed = TRUE)) == 0)  {
+          if (length(grep("\\)",temp.alt,fixed = TRUE)) == 0)  {
             temp.alt = temp.alt
               } else {
-                temp.alt = temp.alt[-grep(")",temp.alt,fixed = TRUE)]
+                temp.alt = temp.alt[-grep("\\)",temp.alt,fixed = TRUE)]
               }
     # combined vector
     temp.cities.comb <- c(temp.name,temp.ascii,temp.alt)
     
-      if (length(grep("(",temp.cities.comb,fixed = TRUE)) == 0)  {
+      if (length(grep("\\(",temp.cities.comb,fixed = TRUE)) == 0)  {
         temp.cities.comb = temp.cities.comb
       } else {
-        temp.cities.comb = temp.cities.comb[-grep("(",temp.cities.comb,fixed = TRUE)]
+        temp.cities.comb = temp.cities.comb[-grep("\\(",temp.cities.comb,fixed = TRUE)]
       }
-    temp.cities.comb <- gsub("\\(", "", temp.cities.comb)
-    temp.cities.comb <-gsub("\\)", "", temp.cities.comb)
+    #temp.cities.comb <- gsub("\\(", "", temp.cities.comb)
+    temp.cities.comb <- gsub("\\(", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\)", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\[", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\]", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\t", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\.", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\?", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\!", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\\\", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\+", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\:", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\*", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\:", "", as.character(temp.cities.comb))
+    temp.cities.comb <- gsub("\\t", "", as.character(temp.cities.comb))
     
+    # remove remnant weird patterns
+    pattern <- "/|:|\\?|<|>|\\|\\\\|\\*"
+    temp.cities.comb <- temp.cities.comb[-which(grepl(pattern, temp.cities.comb))]
+
       # locations = combined all cities
-      locations <-temp.cities.comb
+      locations <-temp.cities.comb %>% unique()
 
     # list of projects with geographical locations
     loc.projects=list()
 
     loc.projects <- mclapply(X=temp.country[,"description_narrative"],FUN=find_locations, locations = locations,mc.cores=n.cores)
-
-    #for (i in 1:dim(temp.country)[1]) {
-    #for (i in 1:10) {
-      
-      #print(paste("k=",k,"i=",i))
-      
-      # error handling
-      #skip_to_next <- FALSE
-      
-      # Note that print(b) fails since b doesn't exist
-      # extract locations names
-      
-      #loc.projects[[i]] <- find_locations(temp.country[i,"description_narrative"],locations)
-      #tryCatch(loc.projects[[i]] <- find_locations(temp.country[i,"description_narrative"],locations), error = function(e) { skip_to_next <<- TRUE})
-      
-      #if(skip_to_next) { loc.projects[[i]] = NA }   
-    
     names(loc.projects) <- temp.country$iati_identifier_bis[1:dim(temp.country)[1]]
-    #names(loc.projects) <- temp.country$iati_identifier_bis[1:10]
-    
+
     ## dataframe with iati id, name of cities
     loc.projects <- lapply(loc.projects, function(x) if(identical(x, character(0))) NA_character_ else x) # change character(0) to NAs
 
@@ -168,6 +179,9 @@ for (k in 1:2){
     #saveRDS(loc.projects.df.gps.final,here("data","derived-data","loc.gps.projects.rds"))
     #return(loc.projects.df.gps.final)
     gc()
-  }
-saveRDS(loc.projects.df.gps.final,here("data","derived-data","loc.gps.projects.rds"))
+}
+
+saveRDS(loc.projects.df.gps.final,here("data","derived-data","loc.gps.projects_b.rds"))
+
+
 

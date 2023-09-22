@@ -42,5 +42,5 @@ for (i in 1:length(ctr)) {
   gc()
   
 }
-saveRDS(all, here("data","raw-data","CADC.rds"))
+saveRDS(all, here("data","raw-data","CADC.rds")) # retrieved on the 02/08/2023
 
