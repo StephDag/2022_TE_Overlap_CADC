@@ -7,7 +7,7 @@ x <- c("here","dplyr","janitor","tidyverse","tidytext","strex","readxl","ggpubr"
        "rnaturalearth","rnaturalearthdata","rnaturalearthhires","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",
        "wordcloud","RColorBrewer","wordcloud2","tm","data.table","rutils",
        "foreach","doParallel","doSNOW","tcltk","svMisc","elevatr",
-       "dbscan","rgeoboundaries")
+       "dbscan","rgeoboundaries","ncdf4","RANN")
 lapply(x, require, character.only = TRUE)
 
 # load CESAB IATI package
