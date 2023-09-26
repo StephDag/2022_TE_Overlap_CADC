@@ -97,86 +97,16 @@ sf_obj <- st_as_sf(values.xy, coords = c("lon", "lat"),crs=crs(imp_count))
 # Define the point coordinates 
   # example with 1 point
 # create a full funciton to apply lapply
-  # the function: 1. find within the 120km buffer the closest imp_count cell, and 2. compute the mean imp.count and gravity in a 25km buffer around this point
+  # source the marine_terrestial_raster.r function: 1. find within the 120km buffer the closest imp_count cell, and 2. compute the mean imp.count and gravity in a 25km buffer around this point
+  source(here("R","marine_terrestial_raster.r"))
 
-point=sf_obj[sample(1:8428193,10),]
-buffer=1200000
-buffer_radius_25=250000
+  # inputs
+point=sf_obj[sample(1:8428193,1),]
+buffer_ter=120000
+buffer_marine=20000
 biodiv=imp_count
 
-process_gps_point <- function(point,buffer,buffer_radius_25,biodiv) { # point = sf dataframe, buffer.search = in meters, buffer.impact in meters
-#point <- sf_obj[1000206,]
-#point <- point
-#crs(point) == crs(biodiv)
-#ext(point); ext(biodiv)
-
-# Define the buffer radius in meters: larger than 100km to find the closest coastal gps point, from which the 25km buffer should start
-#buffer <- buffer
-
-# Create a buffer around the point of 120km
-buffer_sf <- st_buffer(point, buffer)
-#crs(buffer_sf) == crs(biodiv)
-
-# crop imp_count with buffer
-#biodiv=biodiv
-imp_count.buffer <- crop(biodiv,ext(buffer_sf)+0.01)
-imp_count.buffer.b <- mask(imp_count.buffer,buffer_sf)
-#plot(imp_count.buffer.b)
-#points(point)
-
-# Get the index of the nearest cell to the point in the 120km buffer
-  # full matrix of distance
-dist <- distance(imp_count.buffer.b,point)
-#plot(dist)
-
-dist.crop <- crop(dist,imp_count.buffer.b)
-dist.crop.b <- mask(dist.crop,imp_count.buffer)
-#plot(dist.crop.b)
-#points(point)
-
-  # find the locations of the pixel with shortest distance with the selected human pixel
-index <- where.min(dist.crop.b)
-
-  # extract the gps coordinates of the point
-xy.index <- xyFromCell(imp_count.buffer.b, index[2])
-names(xy.index) <- c("lon","lat")
-  
-  #  transfrom to sf object
-xy.index <- xy.index %>%
-  as.data.frame %>% 
-  sf::st_as_sf(coords = c(1,2),crs=crs(imp_count))
-
-  # plot the point in red: closest count species point to population point
-#points(xy.index,col="red",pch=2)
-
-  # from this point, draw a 25km bufferand estimate the mean number of species (or other)
-buffer_radius_25 <- buffer_radius_25
-buffer_sf_25 <- st_buffer(xy.index, buffer_radius_25)
-
-  # 25km buffer 
-imp_count.buffer_25 <- crop(imp_count,ext(buffer_sf_25)+0.01)
-imp_count.buffer.25.b <- mask(imp_count.buffer_25,buffer_sf_25)
-
-  # plot
-#plot(imp_count.buffer.25.b)
-
-#points(point)
-#points(xy.index,col="red")
-#crs(buffer_sf_25) == crs(imp_count)
-
- # average values
-#summary(values(imp_count.buffer.25.b))
-mean.count <- mean(values(imp_count.buffer.25.b),na.rm=T);mean.count
-
- # gravity of 
-mean.count.grav <- mean.count/as.numeric(index[3]^2);mean.count.grav
-
-# return as a lits
-data.frame(point = point, xy.index = xy.index, mean.count=mean.count,distance=as.numeric(index[3]), mean.count.grav = mean.count.grav)
-
-}
-
-results <- lapply(split(point, seq(nrow(point))), FUN=process_gps_point, buffer=buffer, buffer_radius_25=buffer_radius_25, biodiv=biodiv)
+results.sp.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=4)
 
 #### load human dependance on marine ressources from selig
 human.dep <- read.csv2(here("data","raw-data","Selig2019","Selig&al2019_Dependance_national_marine.csv"),sep=";",header=T)
