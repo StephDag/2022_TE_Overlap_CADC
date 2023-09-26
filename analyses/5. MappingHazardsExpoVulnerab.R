@@ -15,20 +15,6 @@
 imp_count  <- rast(here("data","raw-data","Ohara2021_Science","impact_all_2013.tif"))
 plot(imp_count)
 
-#xfm <- function(x) log10(x) ### how are we transforming count?
-#imp_ct_df <- rasterToPoints(imp_count) %>%
-#  as.data.frame() %>%
-#  setNames(c('x', 'y', 'imp_ct')) %>%
-#  mutate(xfm_imp_ct = xfm(imp_ct),
-#         xfm_imp_ct = ifelse(is.infinite(xfm_imp_ct), NA, xfm_imp_ct))
-
-#max_ct <- max(imp_ct_df$imp_ct, na.rm = TRUE)
-#ct_labels <- c(1, 10, 100, max_ct)
-#ct_breaks <- xfm(ct_labels)
-
-#land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
-#  st_transform(crs(imp_count))
-
 ## Fig. 2B - % species
 
 nspp <- rast(here("data","raw-data","Ohara2021_Science","n_spp_map.tif")) 
@@ -62,6 +48,7 @@ plot(int_pct)
 inlandWaters.100km <- readRDS(here::here("data","derived-data","inlandBuffer_100km.rds"))
 inlandWaters.100km.vect <- vect(inlandWaters.100km)
 inlandWaters.100km.vect <- project(inlandWaters.100km.vect,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+
   # load population raster 2015
 variable = "UN WPP-Adjusted Population Count, v4.11 (2000, 2005, 2010, 2015, 2020): 2.5 arc-minutes"
 pop.world.nc <- rast(here("data","raw-data","Word Population count  SEDAC 5km","gpw-v4-population-count-adjusted-to-2015-unwpp-country-totals-rev11_totpop_2pt5_min_nc","gpw_v4_population_count_adjusted_rev11_2pt5_min.nc"))
