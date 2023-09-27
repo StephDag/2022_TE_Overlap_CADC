@@ -90,18 +90,20 @@ write.csv(noGPS.db, here("data","derived-data","iati_NO_GPS.csv"))
 
 # number of projects by key words
   # updates on the 21/09/2023
-key.marine <- c("\\bCoast","\\bMarin","\\bSea","\\bOcean","\\bshore","\\bBlue\\b","\\bbeach","\\bbmaritime","\\blittoral\\b",
-                "mangrove","seagrass","Saltmarsh","Saltmarshes","\\breef\\b","\\breefs\\b","kelp","\\bestuar","coral","mangrove",
-                "\\bfish","tidal marshes","\\bwave","\\btidal","\\balgae","marshes","\\baquac","\\bmariculture",
-                "\\bsubmarine","\\bdesalination","\\boffshore","\\bport","\\bshipping","\\bwastewater","\\brunoff",
-                "\\bseaweed*","\\bcrustacean*","\\bmollusk*","\\bwetland*","\\btransitional waters","\\blagoon","\\bsalt pond","\\bsalt ponds\\",
-                "\\bshell*","\\bseamount*","\\bmid-ocean ridge*","\\bcentral gyre*","\\bdeep sea","\\bship*","water transport","\\bfinfish\\b",
-                "\\bcôte\\b","\\bcôtière","\\bcôtier","\\bpêche","\\bpêcheur","\\bpêcherie","\\bocéan","\\bleue","\\bplage",  # french translation
-                "\\bmaritime","\\blittoral","\\bherbier","\\bmarais salant\\b","\\bmarée","\\bvague","\\balgues","\\bdessalement",
-                "\\btransport maritime\\b","\\beaux usées\\b","\\bruisselement","\\bsous-marin",
-                "\\bcrustacé*","\\bmollusque*","\\bzones humides","\\bzone humide","\\beaux de transition",
-                "\\blagon*","\\bétang salé","\\bétangs salés","\\bcoquillage*","monts sous-marins","monts sous-marins",
-                "dorsale médio-océanique","dorsales médio-océaniques","\\bgyre*","eaux profondes","eau profonde")
+key.marine <- c("\\bcoast","\\bmarin*","\\bsea","\\bocean*","\\bshore","\\bblue\\b","\\bbeach","\\bbmaritime","\\blittoral\\b","mangrove*","seagrass*","saltmarsh*","\\breef*\\b","kelp*",
+"\\bestuar*","coral*","\\bbfish*","\\finfish*","\\bwave*","\\btidal","\\balgae","marsh*","\\baquac*","\\bmariculture", "\\bsubmarine","\\bdesalination","\\boffshore","\\bport","\\bwastewater","\\bwaste water","\\brunoff",
+ "\\bseaweed*","\\bcrustacean*","\\bmollus*","\\bwetland*","\\btransitional water*","\\blagoon","\\bsalt pond*","bshell*","\\bseamount*","\\bmid-ocean ridge*","\\bcentral gyre*","\\bdeep sea","\\bship*","\\bwater transport",
+"\\bfinfish\\b", "\\bcontinental shelf*","\\bsand*","\\bnautical","\\batoll","\\bunderwater","\\bdemersal","\\baphotic", "pelagic*","neritic","surf","diver\\b", "divers\\b","dive\\b","SCUBA\\b","CPUE","\\bbivalve","\\bboat*",
+"\\bcaribbean biodiversity fund", "\\bclam", "\\bcockle", "\\bcrab", "\\bcruise","\\bdeep water", "\\bdesalini", "\\bdolphin", "\\bdredg", "\\bgrouper",
+"\\bgulf", "\\bharbor", "\\bharbour", "\\binternational water", "\\blionfish", "\\bmpa", "\\bmussel", "\\bnaval", "\\boyster","\\bprawn", 
+"\\bproblue", "\\bsnapper", "\\bsaltwater", "\\bsargassum", "\\bshark", "\\bshrimp", "\\btuna", "\\bturtle", "\\bunclos", "\\bvessel", "\\bwhale", "\\bwharf",
+"\\bcôte\\b","\\bcôtière","\\bcôtier","\\bpêche","\\bpêcheur","\\bpêcherie","\\bocéan","\\bleue","\\bplage",  # french translation
+"\\bmaritime","\\blittoral","\\bherbier","\\bmarais salant\\b","\\bmarée","\\bvague","\\balgues","\\bdessalement",
+"\\btransport maritime\\b","\\beaux usées\\b","\\bruisselement","\\bsous-marin",
+"\\bcrustacé*","\\bmollusque*","\\bzones humides","\\bzone humide","\\beaux de transition",
+"\\blagon*","\\bétang salé","\\bétangs salés","\\bcoquillage*","monts sous-marins","monts sous-marins",
+"dorsale médio-océanique","dorsales médio-océaniques","\\bgyre*","eaux profondes","eau profonde")
+
 
 noGPS.marine.db <- all.merge %>%
   filter(is.na(latitude)) %>% # non gps

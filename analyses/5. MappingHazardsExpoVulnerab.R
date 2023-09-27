@@ -1,6 +1,8 @@
-# mapping raster of hazards, exposure, vulnerab at low resolution
+# Populated Terrestrial raster (2015 - 5km) of species at risk count, percentage and trends
+# outputs: 3 terrestrial raster of 5km resolution each
 # Stephanie D'Agata
 # Sept 2023
+# Updates: Sept 2023
 
 # vulnerability frameword of IPCC 2019: hazards, exposure, contextual vulnerability
 
@@ -11,24 +13,16 @@
 ## load data from figure 2 linked to github: https://github.com/oharac/bd_chi/tree/master
   # https://github.com/oharac/bd_chi/tree/master/_output/rasters/impact_maps
 
-# species count
+# ## Fig. 2A - species count
 imp_count  <- rast(here("data","raw-data","Ohara2021_Science","impact_all_2013.tif"))
 plot(imp_count)
 
 ## Fig. 2B - % species
-
 nspp <- rast(here("data","raw-data","Ohara2021_Science","n_spp_map.tif")) 
 imp_pct <- imp_count / nspp
 plot(imp_pct)
-#imp_pct_df <- rasterToPoints(imp_pct) %>%
-#  as.data.frame() %>%
-#  rename(imp_pct = layer)
-
-#land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
-#  st_transform(crs(imp_pct))
 
 ## Fig. 2C - intensification
-
 incr <- rast(here("data","raw-data","Ohara2021_Science","intens_all_incr2.tif"))
 decr <- rast(here("data","raw-data","Ohara2021_Science","intens_all_decr2.tif"))
 nspp <- rast(here("data","raw-data","Ohara2021_Science","n_spp_map.tif")) 
@@ -36,14 +30,7 @@ nspp <- rast(here("data","raw-data","Ohara2021_Science","n_spp_map.tif"))
 int_pct <- (incr - decr) / nspp
 plot(int_pct)
 
-#int_pct_df <- rasterToPoints(int_pct) %>%
-#  as.data.frame() %>%
-#  rename(int_pct = layer)
-
-#land_sf <- read_sf(here('_spatial/ne_10m_land/ne_10m_land_no_casp.shp')) %>%
-#  st_transform(crs(int_pct))
-
-#### human population in coastal areas (100km, 100m elevation) from sedac
+#### human population in coastal areas (100km, 100m elevation) from sedac - in mollweid projection
   # load the 100km coastal buffer
 inlandWaters.100km <- readRDS(here::here("data","derived-data","inlandBuffer_100km.rds"))
 inlandWaters.100km.vect <- vect(inlandWaters.100km)
@@ -53,41 +40,24 @@ inlandWaters.100km.vect <- project(inlandWaters.100km.vect,"+proj=moll +lon_0=0 
 variable = "UN WPP-Adjusted Population Count, v4.11 (2000, 2005, 2010, 2015, 2020): 2.5 arc-minutes"
 pop.world.nc <- rast(here("data","raw-data","Word Population count  SEDAC 5km","gpw-v4-population-count-adjusted-to-2015-unwpp-country-totals-rev11_totpop_2pt5_min_nc","gpw_v4_population_count_adjusted_rev11_2pt5_min.nc"))
 
-#pop.world.nc <- here("data","raw-data","Word Population count  SEDAC 5km","gpw-v4-population-count-adjusted-to-2015-unwpp-country-totals-rev11_totpop_2pt5_min_nc","gpw_v4_population_count_adjusted_rev11_2pt5_min.nc")
-
   # the 4th raster is the count population for 2015: 4	Population Count, v4.11 (2015) (see doc)
-#robin = "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
 pop.world <- pop.world.nc[[4]] 
 
-  # robin
-#pop.world.proj <- project(pop.world,"+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs")
-  # molleid
+  # mollweid
 pop.world.proj <- project(pop.world,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 plot(pop.world.proj)
  # check
 
-#crs="+init=EPSG:4326"
-
   # intersect with 100km coastal buffer
-      # check crs
+      # check crs and extent
 #crs(pop.world.proj) == crs(inlandWaters.100km.vect)
 #ext(pop.world.proj); ext(inlandWaters.100km.vect)
-      # 
+
+      # crop the populated raster to 100km buffer
 pop.world.nc.100km <- crop(pop.world.proj,ext(inlandWaters.100km.vect)+0.01)
 pop.world.nc.100km.b <- mask(pop.world.nc.100km,inlandWaters.100km.vect)
 #plot(pop.world.nc.100km.b)
 #lines(inlandWaters.100km.vect)
-
-  # elevation for each - to do but not now, because too long (22/09/2023)
-        #all.gps.sp <- st_as_sf(all.merge.gps, coords = c("longitude","latitude"))
-        #st_crs(all.gps.sp) = 4326
-        # get elevation points
-        # all.gps.spdf_elev_epqs <- get_elev_point(all.gps.sp, prj = prj_dd, src = "aws")
-
-#ncin <- nc_open(pop.world.nc)
-#print(ncin)
-#names(ncin$var)
-#variables = names(ncin[['var']])
 
   # extract centroid of each pixel of coastal population
 values.xy <- as.data.frame(pop.world.nc.100km.b,xy = TRUE)
@@ -95,19 +65,30 @@ names(values.xy) <- c("lon","lat","pop.count")
 sf_obj <- st_as_sf(values.xy, coords = c("lon", "lat"),crs=crs(imp_count))
 
 # Define the point coordinates 
-  # example with 1 point
-# create a full funciton to apply lapply
+# create a full function to apply lapply
   # source the marine_terrestial_raster.r function: 1. find within the 120km buffer the closest imp_count cell, and 2. compute the mean imp.count and gravity in a 25km buffer around this point
   source(here("R","marine_terrestial_raster.r"))
 
   # inputs
-point=sf_obj[sample(1:8428193,1),]
-buffer_ter=120000
-buffer_marine=20000
+    # exemple with 1 point
+point=sf_obj[sample(1:8428193,5),]
+#point=sf_obj
+buffer_ter=120000 # 120km terrestrial raster
+buffer_marine=20000 # 20km coastal raster
+
+  # species at risk - count
 biodiv=imp_count
+results.sp.count.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=20)
 
-results.sp.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=4)
+  # species at risk - percentage
+biodiv=imp_pct
+results.sp.perc.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=20)
 
+  # species at risk - intensification
+biodiv=int_pct
+results.sp.perc.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=20)
+
+  # species at risk - 
 #### load human dependance on marine ressources from selig
 human.dep <- read.csv2(here("data","raw-data","Selig2019","Selig&al2019_Dependance_national_marine.csv"),sep=";",header=T)
 human.dep <- human.dep[-1,]

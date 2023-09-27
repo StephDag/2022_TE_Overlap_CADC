@@ -90,6 +90,6 @@ marine_terrestial_raster <- function(point,buffer_ter,buffer_marine,biodiv) { # 
   mean.count.grav <- mean.count/as.numeric(index[3]^2);mean.count.grav
   
   # return as a lits
-  data.frame(point = point, xy.index = xy.index, mean.count=mean.count,distance=as.numeric(index[3]), mean.count.grav = mean.count.grav)
+  data.frame(point = point, mean.count=mean.count,distance=as.numeric(index[3]), mean.count.grav = mean.count.grav)
   
 }
