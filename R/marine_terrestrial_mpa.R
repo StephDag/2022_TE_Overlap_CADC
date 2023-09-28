@@ -6,7 +6,7 @@
 #mpa=MPA.full.proj
 #biodiv=imp_count
 
-process_gps_point.mpa <- function(point,buffer_ter,buffer_marine,mpa,biodiv) { # point = sf dataframe, buffer.search = in meters, buffer.impact in meters
+marine_terrestrial_mpa <- function(point,buffer_ter,buffer_marine,mpa,biodiv) { # point = sf dataframe, buffer.search = in meters, buffer.impact in meters
   #point <- sf_obj[1000206,]
   #point <- point
   #crs(point) == crs(mpa)
