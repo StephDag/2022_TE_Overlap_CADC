@@ -92,18 +92,16 @@ write.csv(noGPS.db, here("data","derived-data","iati_NO_GPS.csv"))
   # updates on the 21/09/2023
 key.marine <- c("\\bcoast","\\bmarin*","\\bsea","\\bocean*","\\bshore","\\bblue\\b","\\bbeach","\\bbmaritime","\\blittoral\\b","mangrove*","seagrass*","saltmarsh*","\\breef*\\b","kelp*",
 "\\bestuar*","coral*","\\bbfish*","\\finfish*","\\bwave*","\\btidal","\\balgae","marsh*","\\baquac*","\\bmariculture", "\\bsubmarine","\\bdesalination","\\boffshore","\\bport","\\bwastewater","\\bwaste water","\\brunoff",
- "\\bseaweed*","\\bcrustacean*","\\bmollus*","\\bwetland*","\\btransitional water*","\\blagoon","\\bsalt pond*","bshell*","\\bseamount*","\\bmid-ocean ridge*","\\bcentral gyre*","\\bdeep sea","\\bship*","\\bwater transport",
-"\\bfinfish\\b", "\\bcontinental shelf*","\\bsand*","\\bnautical","\\batoll","\\bunderwater","\\bdemersal","\\baphotic", "pelagic*","neritic","surf","diver\\b", "divers\\b","dive\\b","SCUBA\\b","CPUE","\\bbivalve","\\bboat*",
+ "\\bseaweed*","\\bcrustacean*","\\bmollus*","\\bwetland*","\\btransitional water*","\\blagoon","\\bsalt pond*","bshell","\\bseamount*","\\bmid-ocean ridge*","\\bcentral gyre*","\\bdeep sea","\\bship*","\\bwater transport",
+"\\bfinfish\\b", "\\bcontinental shelf*","\\bsand*","\\bnautical","\\batoll","\\bunderwater","\\bdemersal","\\baphotic", "pelagic*","neritic","surf","diver\\b", "divers\\b","dive\\b","SCUBA\\b","CPUE","\\bbivalve*","\\bboat*",
 "\\bcaribbean biodiversity fund", "\\bclam", "\\bcockle", "\\bcrab", "\\bcruise","\\bdeep water", "\\bdesalini", "\\bdolphin", "\\bdredg", "\\bgrouper",
 "\\bgulf", "\\bharbor", "\\bharbour", "\\binternational water", "\\blionfish", "\\bmpa", "\\bmussel", "\\bnaval", "\\boyster","\\bprawn", 
 "\\bproblue", "\\bsnapper", "\\bsaltwater", "\\bsargassum", "\\bshark", "\\bshrimp", "\\btuna", "\\bturtle", "\\bunclos", "\\bvessel", "\\bwhale", "\\bwharf",
 "\\bcôte\\b","\\bcôtière","\\bcôtier","\\bpêche","\\bpêcheur","\\bpêcherie","\\bocéan","\\bleue","\\bplage",  # french translation
-"\\bmaritime","\\blittoral","\\bherbier","\\bmarais salant\\b","\\bmarée","\\bvague","\\balgues","\\bdessalement",
-"\\btransport maritime\\b","\\beaux usées\\b","\\bruisselement","\\bsous-marin",
-"\\bcrustacé*","\\bmollusque*","\\bzones humides","\\bzone humide","\\beaux de transition",
-"\\blagon*","\\bétang salé","\\bétangs salés","\\bcoquillage*","monts sous-marins","monts sous-marins",
-"dorsale médio-océanique","dorsales médio-océaniques","\\bgyre*","eaux profondes","eau profonde")
-
+"\\bmaritime","\\blittoral","\\bherbier","\\bmarais salant\\b","\\bmarée","\\bvague","\\balgues","\\bdessalement","\\btransport maritime\\b","\\beaux usées\\b","\\bruisselement","\\bsous-marin",
+"\\bcrustacé*","\\bmollusque*","\\bzones humides","\\bzone humide","\\beaux de transition","\\blagon*","\\bétang salé","\\bétangs salés","\\bcoquillage*",
+"dorsale médio-océanique","dorsales médio-océaniques","\\bgyre*","eaux profondes","eau profonde","gyre océanique","\\bbateau*","\\bpoisson*","\\bnautique*","\\bdémersa*","pélagique*","\\bplongée*\\b","\\bplongeur*\\b",
+"\\bcapture*","coquillage*","crabe*","\\bcoque*","croisière*","mérou*","\\bdauphin*","\\bcrevette*","\\bsargasse*","requin*","thon*","tortue*","baleine*","\\bmoule*")
 
 noGPS.marine.db <- all.merge %>%
   filter(is.na(latitude)) %>% # non gps
@@ -124,7 +122,12 @@ noGPS.marine.db %>% select(coastal.nar,coastal.title,coastal) %>% filter(coastal
 #  str_detect("crustaceans")
 
   # check
-summary(as.factor(noGPS.marine.db$coastal))    # 0: 152598      1:4873 
+summary(as.factor(noGPS.marine.db$coastal))    # 0: 136493      1:20978 
+
+n.projects <- noGPS.marine.db %>%
+  filter(coastal == 1)
+length(unique(n.projects$iati_identifier))
+  
 
  # save rds data
   saveRDS(noGPS.marine.db, here("data","derived-data","iati_marine_NO_GPS.rds"))

@@ -1,7 +1,8 @@
 # load packages for the project
 pacman::p_load(here,dplyr,janitor,tidyverse,tidytext,strex,fraser,star,readxl,ggpubr,scico,ggrepel)
 pacman::p_load(rnaturalearth,rnaturalearthdata,rnaturalearthhires,leaflet,sf,ggmap,rio,terra,maps,sp,wdpar)
-pacman::p_load(wordcloud,RColorBrewer,wordcloud2,tm,dbscan,rgeoboundaries)
+pacman::p_load(wordcloud,RColorBrewer,wordcloud2,tm,dbscan,rgeoboundaries,
+               ncdf4,RANN,mapview,sf,stars)
 
 x <- c("here","dplyr","janitor","tidyverse","tidytext","strex","readxl","ggpubr","scico","ggrepel",
        "rnaturalearth","rnaturalearthdata","rnaturalearthhires","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",

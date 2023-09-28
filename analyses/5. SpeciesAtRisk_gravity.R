@@ -3,6 +3,8 @@
 # Stephanie D'Agata
 # Sept 2023
 # Updates: Sept 2023
+install.packages("here",dependencies=T)
+source(here::here("analyses","00_setup.R"))
 
 # vulnerability frameword of IPCC 2019: hazards, exposure, contextual vulnerability
 
@@ -69,50 +71,93 @@ sf_obj <- st_as_sf(values.xy, coords = c("lon", "lat"),crs=crs(imp_count))
 # Define the point coordinates 
 # create a full function to apply lapply
   # source the marine_terrestial_raster.r function: 1. find within the 120km buffer the closest imp_count cell, and 2. compute the mean imp.count and gravity in a 25km buffer around this point
-  source(here("R","marine_terrestial_raster.r"))
+source(here::here("R","marine_terrestial_raster.R"))
 
   # inputs
-    # exemple with 1 point
-point=sf_obj[sample(1:8428193,5),]
-#point=sf_obj
-buffer_ter=120000 # 120km terrestrial raster
+    # exemple with 10 point
+point <- sf_obj[sample(1:8428193,10),]
+    # full populated raster
+point=sf_obj
+buffer_ter=150000 # 150km terrestrial raster
 buffer_marine=20000 # 20km coastal raster
-
-  # species at risk - count
-biodiv=imp_count
-results.sp.count.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=6)
-results.sp.count.risk.df <- do.call(rbind.data.frame, results.sp.count.risk)
-  # standardized - min-max
+n.cores=8
+# standardized - min-max
 source(here("R","NormMinMax.R"))
 
+#################################
+#    species at risk - count.   #
+#################################
+
+biodiv=imp_count
+results.sp.count.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=n.cores)
+results.sp.count.risk.df <- do.call(rbind.data.frame, results.sp.count.risk)
+
+#
 results.sp.count.risk.df <- results.sp.count.risk.df %>%
   mutate(mean.count.grav.norm = normalize(log(results.sp.count.risk.df$mean.count.grav+1)))
-
-  # full join with full db
-
 
   # transform to sf 
 results.sp.count.risk.sf <- st_as_sf(x = results.sp.count.risk.df,                         
                                            geometry = results.sp.count.risk.df$point.geometry,
                                            crs = crs(imp_pct))
 
-  # sp.count.raster
-sp.count.rast.ter<-st_rasterize(results.sp.count.risk.sf %>% dplyr::select(mean.count.grav.norm, geometry),st_as_stars(st_bbox(pop.world.nc.100km.b),values = NA_real_),dx=res(pop.world.nc.100km.b)[1],dy=res(pop.world.nc.100km.b)[2],nx= ncol(pop.world.nc.100km.b),nrow= nrow(pop.world.nc.100km.b))
+  # rasterize 
+sp.count.rast.ter<-st_rasterize(results.sp.count.risk.sf %>% dplyr::select(mean.count.grav.norm, geometry),
+                   st_as_stars(st_bbox(pop.world.nc.100km.b), dx=res(pop.world.nc.100km.b)[1],dy=res(pop.world.nc.100km.b)[2],
+                               values = NA_real_))
 sp.count.rast.ter <- rast(sp.count.rast.ter)
 
+  # save as tiff
+writeRaster(sp.count.rast.ter, here("data","derived-data","sp.count.rast.ter.grav.tif"),overwrite=T)
 
-test <- rast(results.sp.count.risk.sf %>% dplyr::select(geometry,mean.count.grav.norm), type="xyz",
-             nrows=nrow(pop.world.nc.100km.b),ncol=ncol(pop.world.nc.100km.b),
-              extent=ext(pop.world.nc.100km.b),resolution=res(pop.world.nc.100km.b),type="xyz")                                        
+##########################################
+#   species at risk - percentage         #
+##########################################
+biodiv=imp_pct
+results.sp.perc.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=n.cores)
+results.sp.perc.risk.df <- do.call(rbind.data.frame, results.sp.perc.risk)
+
+#
+results.sp.perc.risk.df <- results.sp.perc.risk.df %>%
+  mutate(mean.count.grav.norm = normalize(log(results.sp.perc.risk.df$mean.count.grav+1)))
+
+# transform to sf 
+results.sp.perc.risk.sf <- st_as_sf(x = results.sp.perc.risk.df,                         
+                                     geometry = results.sp.perc.risk.df$point.geometry,
+                                     crs = crs(imp_pct))
+
+# rasterize 
+sp.perc.rast.ter<-st_rasterize(results.sp.perc.risk.sf %>% dplyr::select(mean.count.grav.norm, geometry),
+                                st_as_stars(st_bbox(pop.world.nc.100km.b), dx=res(pop.world.nc.100km.b)[1],dy=res(pop.world.nc.100km.b)[2],
+                                            values = NA_real_))
+sp.perc.rast.ter <- rast(sp.perc.rast.ter)
 
 # export as tiff
-writeRaster(sp.count.rast.ter, here("data","derived-data","sp.count.rast.ter.tif"),overwrite=TRUE)
+writeRaster(sp.perc.rast.ter, here("data","derived-data","sp.perc.rast.ter.grav.tif"),overwrite=T)
 
-  # species at risk - percentage
-biodiv=imp_pct
-results.sp.perc.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=20)
+#########################################
+#   species at risk - intensification.  #
+#########################################
 
-  # species at risk - intensification
 biodiv=int_pct
-results.sp.perc.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=20)
+results.sp.int_pct.risk <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestial_raster, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=n.cores)
+results.sp.int_pct.risk.df <- do.call(rbind.data.frame, results.sp.int_pct.risk)
+
+#
+results.sp.int_pct.risk.df <- results.sp.int_pct.risk.df %>%
+  mutate(mean.count.grav.norm = normalize(log(results.sp.int_pct.risk.df$mean.count.grav+1)))
+
+# transform to sf 
+results.sp.int_pct.risk.sf <- st_as_sf(x = results.sp.int_pct.risk.df,                         
+                                    geometry = results.sp.int_pct.risk.df$point.geometry,
+                                    crs = crs(imp_pct))
+
+# rasterize 
+sp.int.rast.ter<-st_rasterize(results.sp.int_pct.risk.sf %>% dplyr::select(mean.count.grav.norm, geometry),
+                               st_as_stars(st_bbox(pop.world.nc.100km.b), dx=res(pop.world.nc.100km.b)[1],dy=res(pop.world.nc.100km.b)[2],
+                                           values = NA_real_))
+sp.int.rast.ter <- rast(sp.int.rast.ter)
+
+# export as tiff
+writeRaster(sp.int.rast.ter, here("data","derived-data","sp.int_pct.rast.ter.grav.tif"),overwrite=T)
 

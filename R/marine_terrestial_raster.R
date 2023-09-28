@@ -23,7 +23,7 @@ marine_terrestial_raster <- function(point,buffer_ter,buffer_marine,biodiv) { # 
   buffer_sf <- st_transform(buffer_sf,crs=crs(biodiv))
   
   #mapview::mapview(buffer_sf) +
-  #  mapview::mapview(point)
+    mapview::mapview(point)
   
   #crs(buffer_sf) == crs(biodiv)
   
