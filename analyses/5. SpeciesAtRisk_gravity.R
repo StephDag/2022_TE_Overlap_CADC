@@ -58,7 +58,7 @@ plot(pop.world.proj)
       # crop the populated raster to 100km buffer
 pop.world.nc.100km <- crop(pop.world.proj,ext(inlandWaters.100km.vect)+0.01)
 pop.world.nc.100km.b <- mask(pop.world.nc.100km,inlandWaters.100km.vect)
-writeRaster(pop.world.nc.100km.b, here("data","derived-data","pop.world.nc.100km.b_100km.tif"),overwrite=TRUE)
+#writeRaster(pop.world.nc.100km.b, here("data","derived-data","pop.world.nc.100km.b_100km.tif"),overwrite=TRUE)
 
 #plot(pop.world.nc.100km.b)
 #lines(inlandWaters.100km.vect)
@@ -68,19 +68,17 @@ values.xy <- as.data.frame(pop.world.nc.100km.b,xy = TRUE)
 names(values.xy) <- c("lon","lat","pop.count")
 sf_obj <- st_as_sf(values.xy, coords = c("lon", "lat"),crs=crs(imp_count))
 
-# Define the point coordinates 
-# create a full function to apply lapply
   # source the marine_terrestial_raster.r function: 1. find within the 120km buffer the closest imp_count cell, and 2. compute the mean imp.count and gravity in a 25km buffer around this point
 source(here::here("R","marine_terrestial_raster.R"))
 
   # inputs
     # exemple with 10 point
-point <- sf_obj[sample(1:8428193,10),]
+point <- sf_obj[sample(1:8428193,1),]
     # full populated raster
-point=sf_obj
+#point=sf_obj
 buffer_ter=150000 # 150km terrestrial raster
 buffer_marine=20000 # 20km coastal raster
-n.cores=8
+#n.cores=8
 # standardized - min-max
 source(here("R","NormMinMax.R"))
 

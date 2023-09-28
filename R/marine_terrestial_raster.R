@@ -8,6 +8,10 @@
   # buffer_marine:marine buffer starting from the closest marine pixel
   # biodiv: marine raster
 
+buffer_ter=150000 # 150km terrestrial raster
+buffer_marine=20000 # 20km coastal raster
+biodiv = imp_count
+
 marine_terrestial_raster <- function(point,buffer_ter,buffer_marine,biodiv) { # point = sf dataframe, buffer.search = in meters, buffer.impact in meters
   #point <- sf_obj[1000206,]
   #point <- point
@@ -30,7 +34,6 @@ marine_terrestial_raster <- function(point,buffer_ter,buffer_marine,biodiv) { # 
   # crop imp_count with buffer
   #biodiv=biodiv
   imp_count.buffer <- crop(biodiv,ext(buffer_sf)+1)
-  imp_count.buffer <- crop(biodiv,buffer_sf)
   
   imp_count.buffer.b <- mask(imp_count.buffer,buffer_sf)
   #plot(imp_count.buffer.b)
