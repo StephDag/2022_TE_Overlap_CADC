@@ -1,8 +1,9 @@
 # Populated Terrestrial raster (2015 - 5km) of MPA gravity (based on MPA area in a buffer)
-# outputs: 3 terrestrial raster of 5km resolution each
+# outputs: 3 terrestrial raster of 5km resolution each with stadarized MPA gravity (0 -1 value)
 # Stephanie D'Agata
 # Sept 2023
 # Updates: Sept 2023
+
 install.packages("here",dependencies=T)
 source(here::here("analyses","00_setup.R"))
 
@@ -63,6 +64,3 @@ results.mpa.rast.ter <- rast(results.mpa.rast.ter)
 
 # save as tiff
 writeRaster(results.mpa.rast.ter, here("data","derived-data","results.mpa.rast.ter.gravity.tiff"),overwrite=T)
-
-
-
