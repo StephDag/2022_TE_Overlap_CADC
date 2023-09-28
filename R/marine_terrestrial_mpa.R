@@ -1,11 +1,12 @@
 
-point <- sf_obj[sample(1:8428193,10),]
-buffer_ter=150000 # 150km
-buffer_marine=20000 # 20km
-mpa=MPA.full.proj
-biodiv=imp_count
+# test
+#point <- sf_obj[sample(1:8428193,10),]
+#buffer_ter=150000 # 150km
+#buffer_marine=20000 # 20km
+#mpa=MPA.full.proj
+#biodiv=imp_count
 
-process_gps_point.mpa <- function(point,buffer,buffer_radius_2,mpa,biodiv) { # point = sf dataframe, buffer.search = in meters, buffer.impact in meters
+process_gps_point.mpa <- function(point,buffer_ter,buffer_marine,mpa,biodiv) { # point = sf dataframe, buffer.search = in meters, buffer.impact in meters
   #point <- sf_obj[1000206,]
   #point <- point
   #crs(point) == crs(mpa)
@@ -57,8 +58,8 @@ process_gps_point.mpa <- function(point,buffer,buffer_radius_2,mpa,biodiv) { # p
   mpa.buffer <- terra::intersect(vect(mpa),buffer_marine)
   
   # assess area of mpa in the buffer
-  plot(mpa.buffer)
-  points(xy.index,col="red")
+  #plot(mpa.buffer)
+  #points(xy.index,col="red")
   
   if (is.null(dim(mpa.buffer)) == T) {
     mpa.area = 0
@@ -79,8 +80,3 @@ process_gps_point.mpa <- function(point,buffer,buffer_radius_2,mpa,biodiv) { # p
   data.frame(point = point, mpa.area.buffer=mpa.area,distance=as.numeric(index[3]), mpa.grav = mpa.grav)
   
 }
-
-results <- lapply(split(point, seq(nrow(point))), FUN=process_gps_point.mpa, buffer=buffer, buffer_radius_2=buffer_radius_2, mpa=mpa)
-
-
-
