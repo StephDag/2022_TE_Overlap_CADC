@@ -32,7 +32,7 @@ nspp <- rast(here("data","raw-data","Ohara2021_Science","n_spp_map.tif"))
 int_pct <- (incr - decr) / nspp
 plot(int_pct)
 
-#### human population in coastal areas (100km, 100m elevation) from sedac - in mollweid projection
+#### human population in coastal areas (100km, 100m elevation) from sedac - in mollweide projection
   # load the 100km coastal buffer
 inlandWaters.100km <- readRDS(here::here("data","derived-data","inlandBuffer_100km.rds"))
 inlandWaters.100km.vect <- vect(inlandWaters.100km)
@@ -45,7 +45,7 @@ pop.world.nc <- rast(here("data","raw-data","Word Population count  SEDAC 5km","
   # the 4th raster is the count population for 2015: 4	Population Count, v4.11 (2015) (see doc)
 pop.world <- pop.world.nc[[4]] 
 
-  # mollweid
+  # mollweide
 pop.world.proj <- project(pop.world,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 plot(pop.world.proj)
  # check
@@ -73,7 +73,7 @@ source(here::here("R","marine_terrestial_raster.R"))
 
   # inputs
     # exemple with 10 point
-point <- sf_obj[sample(1:8428193,1),]
+point <- sf_obj[sample(1:8428193,10),]
     # full populated raster
 #point=sf_obj
 buffer_ter=150000 # 150km terrestrial raster
@@ -98,7 +98,8 @@ results.sp.count.risk.df <- results.sp.count.risk.df %>%
 results.sp.count.risk.sf <- st_as_sf(x = results.sp.count.risk.df,                         
                                            geometry = results.sp.count.risk.df$point.geometry,
                                            crs = crs(imp_pct))
-
+saveRDS(results.sp.count.risk.sf, here("data","derived-data","results.sp.count.risk.rds"))
+  
   # rasterize 
 sp.count.rast.ter<-st_rasterize(results.sp.count.risk.sf %>% dplyr::select(mean.count.grav.norm, geometry),
                    st_as_stars(st_bbox(pop.world.nc.100km.b), dx=res(pop.world.nc.100km.b)[1],dy=res(pop.world.nc.100km.b)[2],
@@ -123,6 +124,7 @@ results.sp.perc.risk.df <- results.sp.perc.risk.df %>%
 results.sp.perc.risk.sf <- st_as_sf(x = results.sp.perc.risk.df,                         
                                      geometry = results.sp.perc.risk.df$point.geometry,
                                      crs = crs(imp_pct))
+saveRDS(results.sp.perc.risk.sf, here("data","derived-data","results.sp.perc.risk.rds"))
 
 # rasterize 
 sp.perc.rast.ter<-st_rasterize(results.sp.perc.risk.sf %>% dplyr::select(mean.count.grav.norm, geometry),
@@ -149,6 +151,7 @@ results.sp.int_pct.risk.df <- results.sp.int_pct.risk.df %>%
 results.sp.int_pct.risk.sf <- st_as_sf(x = results.sp.int_pct.risk.df,                         
                                     geometry = results.sp.int_pct.risk.df$point.geometry,
                                     crs = crs(imp_pct))
+saveRDS(results.sp.int_pct.risk.sf, here("data","derived-data","results.sp.int_pct.risk.rds"))
 
 # rasterize 
 sp.int.rast.ter<-st_rasterize(results.sp.int_pct.risk.sf %>% dplyr::select(mean.count.grav.norm, geometry),
