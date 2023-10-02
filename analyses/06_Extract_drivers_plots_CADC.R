@@ -28,7 +28,7 @@ cum_imp_2015 <- read_excel(here("data","raw-data","Halpern_2015_cumulative_impac
   clean_names()  %>% 
   as.data.frame()
 
-# scale cumulative impact - Halpern et al 2015 - Spatila and temporal changes in cumulative human impacts on the world's ocean
+# scale cumulative impact - Halpern et al 2015 - Spatial and temporal changes in cumulative human impacts on the world's ocean
 cum_imp_2015_scale <- cum_imp_2015 %>%
   mutate(dev.drv=direct_human_impact+organic_pollution+nutrient_pollution+inorganic_pollution+shipping,
          dev.drv=range01(dev.drv),

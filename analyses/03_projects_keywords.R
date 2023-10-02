@@ -29,7 +29,7 @@ key.marine <- c("\\bcoast","\\bmarin*","\\bsea","\\bocean*","\\bshore","\\bblue\
 key.sustainability <- c("\\bacidifica", "\\badapt", "\\badaptation", "\\bbio sphere","\\bbio-logical diversity","\\bbio-sphere","\\bbiodiversity", "\\bbio-diversity","\\bbiological diversity","\\bbiosphere",
                         "\\bcarbon sink","\\bclimate change","\\bconserv","\\bdisaster risk reduction", "\\bDRR", "\\beco-system", "\\beco-touris", "\\becosystem", "\\becotouris", "\\benvironment*","\\becological",
                         "\\bspecies","\\beutriphication", "\\bhabitat", "\\biuu", "\\bmarine debris ", "\\bmarine energy", "\\bmarine protection", "\\bmitigate", "\\bnature-based solutions",
-                        "capacity-build", "capacity build", "capacity develop", "\\bbadapt*","\\bocean health","\\bocean protection", "\\bvulnerab*", "tenure\\b", "TURF*", "territorial user rights",
+                        "capacity-build","capacity build","capacity develop", "\\bbadapt*","\\bocean health","\\bocean protection", "\\bvulnerab*", "tenure\\b", "TURF*", "territorial user rights",
                         "\\boceanograph","\\boff-shore wind", "\\boffshore wind", "\\bover-fishing", "\\boverfishing","\\bclimat*",
                         "\\boxygen", "\\bpreserv", "\\bprotected area", "\\brenewable", "\\bresearch", "\\bresilien","\\bresponse preparedness", "\\brestoration", "\\brestore", "\\brestoring", "\\bscience",
                         "\\bscientifi", "\\bSDG 14", "\\bsea level rise", "\\bsea-level rise", "\\bsequestration", "\\bslr","\\bsustainab", "\\btidal energy", "\\bwildlife", "\\bwind energy","\\bbblue",

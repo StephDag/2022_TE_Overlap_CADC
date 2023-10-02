@@ -117,6 +117,7 @@ source(here("R","NormMinMax.R"))
 #################################
 #    species at risk - count.   #
 #################################
+
 mcf<-function(f) {function(...) {tryCatch({f(...)} , error=function(e) e)}}
 biodiv=imp_count
 rm(results.sp.count.risk.df.full)
@@ -130,7 +131,7 @@ for (i in 1:length(sf_obj.chunks)){
   results.sp.count.risk.df.temp <- do.call(rbind.data.frame, results.sp.count.risk.temp)
   results.sp.count.risk.df.full <- rbind(results.sp.count.risk.df.full,results.sp.count.risk.df.temp)
   # save dataframe in case of chrash
-  saveRDS(results.sp.count.risk.df.full, here("data","derived-data",paste0("results.sp.count.risk.chunks_",i,".rds",sep="")))
+  saveRDS(results.sp.count.risk.df.full, here("data","derived-data","results.sp.count.risk.chunks.rds"))
   # clean object
   rm(results.sp.count.risk.temp); rm(results.sp.count.risk.df.temp)
   gc()
@@ -138,7 +139,6 @@ for (i in 1:length(sf_obj.chunks)){
 
 #results.sp.count.risk.df <- do.call(rbind.data.frame, results.sp.count.risk)
 
-#
 results.sp.count.risk.df <- results.sp.count.risk.df %>%
   mutate(mean.count.grav.norm = normalize(log(results.sp.count.risk.df$mean.count.grav+1)))
 
