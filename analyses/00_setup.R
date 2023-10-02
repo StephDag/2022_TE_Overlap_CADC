@@ -2,7 +2,7 @@
 # pacman::p_load(here,janitor,tidytext,strex,fraser,star,readxl,ggpubr,scico,ggrepel,
 #                rnaturalearth,rnaturalearthdata,rnaturalearthhires,leaflet,ggmap,rio,terra,maps,sp,wdpar,
 #                wordcloud,RColorBrewer,wordcloud2,tm,dbscan,rgeoboundaries,foreach,doParallel,doSNOW,tcltk,
-#                ncdf4,RANN,mapview,sf,stars,tidyverse,"pdftools")
+#                ncdf4,RANN,mapview,sf,stars,tidyverse,"pdftools","ncdf4")
 
 x <- c("here","dplyr","janitor","tidyverse","tidytext","strex","readxl","ggpubr","scico","ggrepel",
        "rnaturalearth","rnaturalearthdata","rnaturalearthhires","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",

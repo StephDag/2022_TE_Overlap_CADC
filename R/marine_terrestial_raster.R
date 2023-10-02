@@ -8,10 +8,13 @@
   # buffer_marine:marine buffer starting from the closest marine pixel
   # biodiv: marine raster
 
-point <- sf_obj[sample(1:8428193,1),]
-buffer_ter=150000 # 150km terrestrial raster
-buffer_marine=20000 # 20km coastal raster
-biodiv = imp_count
+#rm(point)
+#point <- sf_obj[sample(1:8428193,10),]
+#class(sf_obj.chunks[[1]])
+#point <- sf_obj.chunks[[1]]
+#buffer_ter <- 150000 # 150km terrestrial raster
+#buffer_marine=20000 # 20km coastal raster
+#biodiv = imp_count
 
 marine_terrestial_raster <- function(point,buffer_ter,buffer_marine,biodiv) { # point = sf dataframe, buffer.search = in meters, buffer.impact in meters
   #point <- sf_obj[1000206,]
