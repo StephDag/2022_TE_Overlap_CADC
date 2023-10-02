@@ -262,6 +262,9 @@ ddd <- all.gps.sp.100m.100km %>%
 saveRDS(all.gps.sp.100m.100km, here("data","derived-data","iati_GPS_db_100km_100m.rds"))
 write.csv(all.gps.sp.100m.100km, here("data","derived-data","iati_GPS_db_100km_100m.csv"))
 
+###################################################
+# supplemental infos  - stop code here for now (01/10/2023)
+
 ### select randomly non coastal 400 projects 
 no.coast.100KM <- all.gps.sp.100m.100km %>%
   filter(coastal == 0) %>%

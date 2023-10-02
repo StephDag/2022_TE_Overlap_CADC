@@ -120,9 +120,26 @@ summary(all.gps.sp.100m.100km$land) #      0: 121261      1: 2450
 
 
 
+
 #############################################
-#           add sector codes                #
+#            equity keywords                #
 #############################################
+
+key.equity <- c() # to add once finalize with team (Steph - 01/10/2023)
+
+
+all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
+  mutate(equity.nar = ifelse(str_detect(description_narrative,paste0(key.equity, collapse="|")),1,0)) %>%
+  mutate(equity.title = ifelse(str_detect(title_narrative,paste0(key.equity, collapse="|")),1,0))
+
+all.gps.sp.100m.100km$equity <- ifelse(all.gps.sp.100m.100km$equity.nar == 1 | all.gps.sp.100m.100km$equity.title == 1, 1, 0)
+all.gps.sp.100m.100km$equity[is.na(all.gps.sp.100m.100km$equity)] = 0 # keep the NAs in title or narrative, since it might be filtered through the OECD codes
+all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
+  mutate(equity = as.factor(equity))
+
+################################################
+#           quick look into db                 #
+################################################
 ##### estimate the 
 all.gps.sp.100m.100km.CADC <- all.gps.sp.100m.100km %>%
   filter(coastal == 1 & sustainable == 1 & land == 0)
