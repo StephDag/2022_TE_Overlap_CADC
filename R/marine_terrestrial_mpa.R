@@ -21,7 +21,7 @@ marine_terrestrial_mpa <- function(point,buffer_ter,buffer_marine,mpa,biodiv) { 
   
   # crop imp_count with buffer - imp count is our support for marine raster at one km - not used after, only to find the closest marine gps point
   imp_count.buffer <- crop(biodiv,buffer_sf)
-  imp_count.buffer.b <- mask(imp_count.buffer,buffer_sf)
+  imp_count.buffer.b <- terra::mask(imp_count.buffer,buffer_sf)
   #plot(imp_count.buffer.b)
   #points(point)
   

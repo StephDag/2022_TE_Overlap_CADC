@@ -8,6 +8,7 @@
   # buffer_marine:marine buffer starting from the closest marine pixel
   # biodiv: marine raster
 
+point <- sf_obj[sample(1:8428193,1),]
 buffer_ter=150000 # 150km terrestrial raster
 buffer_marine=20000 # 20km coastal raster
 biodiv = imp_count

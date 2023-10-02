@@ -88,21 +88,7 @@ noGPS.db <- all.merge %>%
 saveRDS(noGPS.db, here("data","derived-data","iati_NO_GPS.rds"))
 write.csv(noGPS.db, here("data","derived-data","iati_NO_GPS.csv"))
 
-# number of projects by key words
-  # updates on the 21/09/2023
-key.marine <- c("\\bcoast","\\bmarin*","\\bsea","\\bocean*","\\bshore","\\bblue\\b","\\bbeach","\\bbmaritime","\\blittoral\\b","mangrove*","seagrass*","saltmarsh*","\\breef*\\b","kelp*",
-"\\bestuar*","coral*","\\bbfish*","\\finfish*","\\bwave*","\\btidal","\\balgae","marsh*","\\baquac*","\\bmariculture", "\\bsubmarine","\\bdesalination","\\boffshore","\\bport","\\bwastewater","\\bwaste water","\\brunoff",
- "\\bseaweed*","\\bcrustacean*","\\bmollus*","\\bwetland*","\\btransitional water*","\\blagoon","\\bsalt pond*","bshell","\\bseamount*","\\bmid-ocean ridge*","\\bcentral gyre*","\\bdeep sea","\\bship*","\\bwater transport",
-"\\bfinfish\\b", "\\bcontinental shelf*","\\bsand*","\\bnautical","\\batoll","\\bunderwater","\\bdemersal","\\baphotic", "pelagic*","neritic","surf","diver\\b", "divers\\b","dive\\b","SCUBA\\b","CPUE","\\bbivalve*","\\bboat*",
-"\\bcaribbean biodiversity fund", "\\bclam", "\\bcockle", "\\bcrab", "\\bcruise","\\bdeep water", "\\bdesalini", "\\bdolphin", "\\bdredg", "\\bgrouper",
-"\\bgulf", "\\bharbor", "\\bharbour", "\\binternational water", "\\blionfish", "\\bmpa", "\\bmussel", "\\bnaval", "\\boyster","\\bprawn", 
-"\\bproblue", "\\bsnapper", "\\bsaltwater", "\\bsargassum", "\\bshark", "\\bshrimp", "\\btuna", "\\bturtle", "\\bunclos", "\\bvessel", "\\bwhale", "\\bwharf",
-"\\bcôte\\b","\\bcôtière","\\bcôtier","\\bpêche","\\bpêcheur","\\bpêcherie","\\bocéan","\\bleue","\\bplage",  # french translation
-"\\bmaritime","\\blittoral","\\bherbier","\\bmarais salant\\b","\\bmarée","\\bvague","\\balgues","\\bdessalement","\\btransport maritime\\b","\\beaux usées\\b","\\bruisselement","\\bsous-marin",
-"\\bcrustacé*","\\bmollusque*","\\bzones humides","\\bzone humide","\\beaux de transition","\\blagon*","\\bétang salé","\\bétangs salés","\\bcoquillage*",
-"dorsale médio-océanique","dorsales médio-océaniques","\\bgyre*","eaux profondes","eau profonde","gyre océanique","\\bbateau*","\\bpoisson*","\\bnautique*","\\bdémersa*","pélagique*","\\bplongée*\\b","\\bplongeur*\\b",
-"\\bcapture*","coquillage*","crabe*","\\bcoque*","croisière*","mérou*","\\bdauphin*","\\bcrevette*","\\bsargasse*","requin*","thon*","tortue*","baleine*","\\bmoule*")
-
+######
 noGPS.marine.db <- all.merge %>%
   filter(is.na(latitude)) %>% # non gps
   distinct() %>%
@@ -122,7 +108,7 @@ noGPS.marine.db %>% select(coastal.nar,coastal.title,coastal) %>% filter(coastal
 #  str_detect("crustaceans")
 
   # check
-summary(as.factor(noGPS.marine.db$coastal))    # 0: 136493      1:20978 
+summary(as.factor(noGPS.marine.db$coastal))   # 0: 136493      1:20978 
 
 n.projects <- noGPS.marine.db %>%
   filter(coastal == 1)
@@ -259,20 +245,6 @@ all.gps.sp.100m.100km$latitude.y <- NULL
 all.gps.sp.100m.100km$longitude.y <- NULL
 all.gps.sp.100m.100km$longitude.x <- NULL
 
-# new variable - 1/0 coastal
-all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(Year = substring(activity_date_iso_date,1,4)) %>% # start year # 392946    257
-  filter(Year %in% seq(2000,2022,1)) %>%
-  mutate(coastal.nar = ifelse(str_detect(description_narrative,paste0(key.marine, collapse="|")),1,0)) %>%
-  mutate(coastal.title = ifelse(str_detect(title_narrative,paste0(key.marine, collapse="|")),1,0))
-
-all.gps.sp.100m.100km$coastal <- ifelse(all.gps.sp.100m.100km$coastal.nar == 1 | all.gps.sp.100m.100km$coastal.title == 1, 1, 0)
-all.gps.sp.100m.100km$coastal[is.na(all.gps.sp.100m.100km$coastal)] = 0 # keep the NAs in title or narrative, since it might be filtered through the OECD codes
-all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(coastal = as.factor(coastal))
-
-summary(all.gps.sp.100m.100km$coastal) #      0: 115043      1: 8668 
-   
 # national vs local scale
 # https://iatistandard.org/en/iati-standard/203/codelists/activityscope/
 summary(as.factor(all.gps.sp.100m.100km$activity_scope_code)) # many NAs     1:33196     2:437     3:2371     4:26617     5:1753     6:1055     7:677     8:1567    NA:55879  NA's:23
