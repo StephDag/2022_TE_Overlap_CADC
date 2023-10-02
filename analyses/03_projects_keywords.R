@@ -110,7 +110,6 @@ all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
 
 summary(all.gps.sp.100m.100km$land) #      0: 121261      1: 2450
 
-
 #############################################
 #           add sector codes                #
 #############################################
@@ -145,7 +144,7 @@ all.gps.sp.100m.100km.CADC <- all.gps.sp.100m.100km %>%
   filter(coastal == 1 & sustainable == 1 & land == 0)
 length(unique(all.gps.sp.100m.100km.CADC$iati_identifier)) # 6722 projects, both coastal and sustainable and potentially land-based
 
-##### save the coded/sectors full db
+##### save the coded/sectors, keywords full db
 saveRDS(all.gps.sp.100m.100km.CADC,here("data","derived-data","iati_GPS_db_100km_100m_keywords_sectors.rds"))
 dim(all.gps.sp.100m.100km.CADC)
 
