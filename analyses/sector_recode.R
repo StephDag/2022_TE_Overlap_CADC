@@ -3,6 +3,7 @@
 # Oct 2023
 
 # load rds of initiatives to see if some are indeed coastal.
+library(here)
 pacman::p_load(rio,tidyverse,here)
 # setwd("D:/data/Dropbox/data/analysis/blue_justice")
 # output.dir <- "R:/Gill/research/2022_TE_Overlap_CADC/data/derived-data"
@@ -54,13 +55,13 @@ perc.unnest <- all.gps.sp.100m.100km %>%
   mutate(sect.num = row_number()) %>%   # ID for sectors for each project
   ungroup
 
-sector.list <- sector.unnest %>% 
+sector.list.org <- sector.unnest %>% 
   left_join(vocab.unnest,by=c("temp.id","sect.num")) %>% 
   left_join(select(perc.unnest,temp.id,sect.num,sector_percentage,percent),by=c("temp.id","sect.num")) %>% 
   select(temp.id,iati_identifier_bis=iati_identifier_bis.x,
          iso_a3,title_narrative,description_narrative,
          sect.num,sector_vocabulary,sector_percentage,vocab,sector_code,sector,percent)
-sector.list.org <- sector.list
+sector.list <- sector.list.org
 # ---- checks ----
 # 1. some were missing vocab entry but seem to be 5 digit codes
 # sector.list %>%
@@ -93,7 +94,6 @@ sector.list <- sector.list %>%
  dac.3.code <- dac.3.code %>% 
    bind_rows(filter(dac.3.code1,!dac3.code%in%c(dac.3.code$dac3.code)))
  
-
 # dac.code.chechi <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="5-3 sector-CADC") %>%
 #   select(dac5.code="code", dac3.code="category",cadc="CADC", everything())%>%
 #   mutate(across(dac5.code:dac3.code,~ as.character(.x)),
@@ -212,7 +212,7 @@ unique(missing.dac3$sector) # 3 values
 missing.dac <- sector.list %>% 
   filter(sector%in%c(missing.dac5$sector,missing.dac3$sector)) %>% 
   distinct(sector,iati_identifier_bis,.keep_all = T)
-n_distinct(missing.dac$iati_identifier_bis)
+n_distinct(missing.dac$iati_identifier_bis) 
 #export(missing.dac,"data/missing.dac.csv")
 
 #9. re-create fields to identify those with 3 and 5 digit DAC codes
@@ -322,9 +322,15 @@ sector.list.tmp <- sector.list %>%
         vocab==1 & !is.na(sector) & nchar(sector)==5 ~ substr(sector, start = 1, stop = 3), # 5 DAC digit codes
         vocab==6 & !is.na(sector) & nchar(sector)==5 & has.dac3==0 ~ substr(sector, start = 1, stop = 3), # AIDdata, same as DAC 5 codes
         vocab%in%c(5,10,11,999) & !is.na(dac3.code) & has.dac3==0 & certainty=="high" ~ dac3.code, 
-        TRUE ~ NA_character_))
+        TRUE ~ NA_character_),
+      certainty=ifelse((has.dac3==0 & !is.na(dac3))|(has.dac5==0 & !is.na(dac5)),"med",certainty))
+
+table(sector.list.tmp$certainty)
 
 # 3. add Chechi's coding of project CADC type 
+dac.cadc  <- dac.cadc %>% 
+  filter(cadc=="Yes") %>% 
+  distinct(dac5.code,.keep_all = T) 
 dac.climate <- dac.cadc %>% 
   filter(climate==1) %>% 
   distinct(dac5.code,.keep_all = T) 
@@ -343,12 +349,13 @@ sector.list.coded <- sector.list.tmp %>%
   mutate(name=ifelse(!is.na(name.y),name.y,name.x), # use DAC5 description where available 
          description=ifelse(!is.na(description.y),description.y,description.x),
          status=ifelse(!is.na(status.y),status.y,status.x),
-         climate=ifelse(dac3%in%dac.climate$dac3.code | dac5%in%dac.climate$dac5.code,1,climate),
-         development=ifelse(dac3%in%dac.dev$dac3.code | dac5%in%dac.dev$dac5.code,1,development),
-         conservation=ifelse(dac3%in%dac.cons$dac3.code | dac5%in%dac.cons$dac5.code,1,conservation)) %>% 
+         cadc=ifelse(dac3%in%dac.cadc$dac3.code | dac5%in%dac.cadc$dac5.code,1,0),
+         climate=ifelse(dac3%in%dac.climate$dac3.code | dac5%in%dac.climate$dac5.code,1,0),
+         development=ifelse(dac3%in%dac.dev$dac3.code | dac5%in%dac.dev$dac5.code,1,0),
+         conservation=ifelse(dac3%in%dac.cons$dac3.code | dac5%in%dac.cons$dac5.code,1,0)) %>% 
   select(temp.id:has.sdg,dac3,dac5,name:status,cadc:certainty)
 names(sector.list.coded)
-
+table(sector.list.coded$conservation)
 
 # Spot check: DAC 3 and 5 digits used (chechi checked)
 # dac3.codes.used <- sector.list.coded %>% 
