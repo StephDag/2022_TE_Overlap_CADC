@@ -71,29 +71,29 @@ sector.list <- sector.list %>%
   mutate(vocab=ifelse(vocab=="","1",vocab)) # weird ones that were missing codes but had 5 digit code in front so using DAC codes
 
 # 2. see if unnesting by "|" worked (should be 0)
- sector.list %>%
+sector.list %>%
   filter(grepl("\\|", sector)) 
 
 #3. ID incorrect DAC codes
- # read in DAC code databases
- dac.5.code <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="dac5digit_sector") %>% 
-   janitor::clean_names() %>% 
-   select(dac5.code=code,dac3.code=category,name, description,status) %>% 
-   mutate(across(dac3.code:dac5.code,~ as.character(.x))) 
- 
- dac.3.code <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="dac3digit_sector_category") %>% 
+# read in DAC code databases
+dac.5.code <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="dac5digit_sector") %>% 
   janitor::clean_names() %>% 
-   select(dac3.code=code,name,description,status) %>% 
-   mutate(across(dac3.code,~ as.character(.x))) 
- # add higher level dac3
- dac.3.code1 <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="DAC Purpose codes") %>%
-   janitor::clean_names() %>% 
-   select(dac3.code=dac_5, name=description,description=clarifications_additional_notes_on_coverage) %>%
-   filter(!is.na(dac3.code)) %>% 
-   mutate(across(dac3.code,~ as.character(.x))) 
- dac.3.code <- dac.3.code %>% 
-   bind_rows(filter(dac.3.code1,!dac3.code%in%c(dac.3.code$dac3.code)))
- 
+  select(dac5.code=code,dac3.code=category,name, description,status) %>% 
+  mutate(across(dac3.code:dac5.code,~ as.character(.x))) 
+
+dac.3.code <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="dac3digit_sector_category") %>% 
+  janitor::clean_names() %>% 
+  select(dac3.code=code,name,description,status) %>% 
+  mutate(across(dac3.code,~ as.character(.x))) 
+# add higher level dac3
+dac.3.code1 <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="DAC Purpose codes") %>%
+  janitor::clean_names() %>% 
+  select(dac3.code=dac_5, name=description,description=clarifications_additional_notes_on_coverage) %>%
+  filter(!is.na(dac3.code)) %>% 
+  mutate(across(dac3.code,~ as.character(.x))) 
+dac.3.code <- dac.3.code %>% 
+  bind_rows(filter(dac.3.code1,!dac3.code%in%c(dac.3.code$dac3.code)))
+
 # dac.code.chechi <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="5-3 sector-CADC") %>%
 #   select(dac5.code="code", dac3.code="category",cadc="CADC", everything())%>%
 #   mutate(across(dac5.code:dac3.code,~ as.character(.x)),
@@ -183,7 +183,7 @@ potential.dac.to.convert
 sector.list <- sector.list %>%
   mutate(sector=ifelse(temp.id==6809,gsub("00","",sector),sector))  # uses AidData coding which is the same as DAC
 
-filter(sector.list,temp.id%in%c(6809,86562)) 
+filter(sector.list,temp.id%in%c(6809,86665)) 
 
 # 7b. those with 5 digit codes that match DAC code table, but say they aren't DAC codes
 dac.to.convert <- sector.list %>% 
@@ -278,7 +278,7 @@ names(glob.clust.code)
 naics.code <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="NAICS_DAC") %>% 
   select(sector_code=sector_code, dac5.code="dac 5 code", dac3.code="dac 3 code",
          comment="Comment",certainty) %>% 
- # distinct() %>% 
+  # distinct() %>% 
   mutate(across(sector_code:dac3.code,~ as.character(.x)),
          vocab=11)%>% 
   filter(!is.na(dac3.code)|!is.na(dac5.code))
@@ -313,17 +313,17 @@ sector.list.tmp <- sector.list %>%
   left_join(other.vocab,by=c("sector_code","vocab")) %>% 
   # Use DAC3 or 5 digit code when available, alternative when not
   mutate(dac5=case_when(
-      vocab==1 & !is.na(sector) & nchar(sector)==5 ~ sector, # 5 DAC digit codes 
-      vocab==6 & !is.na(sector) & nchar(sector)==5 & has.dac5==0 ~ sector, # AIDdata, same as DAC 5 codes
-      vocab%in%c(5,10,11,999) & !is.na(dac5.code) & has.dac5==0 & certainty=="high" ~ dac5.code, # 5 DAC digit codes
+    vocab==1 & !is.na(sector) & nchar(sector)==5 ~ sector, # 5 DAC digit codes 
+    vocab==6 & !is.na(sector) & nchar(sector)==5 & has.dac5==0 ~ sector, # AIDdata, same as DAC 5 codes
+    vocab%in%c(5,10,11,999) & !is.na(dac5.code) & has.dac5==0 & certainty=="high" ~ dac5.code, # 5 DAC digit codes
+    TRUE ~ NA_character_),
+    dac3=case_when(
+      vocab==2 & !is.na(sector) & nchar(sector)==3 ~ sector, # 3 DAC digit codes
+      vocab==1 & !is.na(sector) & nchar(sector)==5 ~ substr(sector, start = 1, stop = 3), # 5 DAC digit codes
+      vocab==6 & !is.na(sector) & nchar(sector)==5 & has.dac3==0 ~ substr(sector, start = 1, stop = 3), # AIDdata, same as DAC 5 codes
+      vocab%in%c(5,10,11,999) & !is.na(dac3.code) & has.dac3==0 & certainty=="high" ~ dac3.code, 
       TRUE ~ NA_character_),
-      dac3=case_when(
-        vocab==2 & !is.na(sector) & nchar(sector)==3 ~ sector, # 3 DAC digit codes
-        vocab==1 & !is.na(sector) & nchar(sector)==5 ~ substr(sector, start = 1, stop = 3), # 5 DAC digit codes
-        vocab==6 & !is.na(sector) & nchar(sector)==5 & has.dac3==0 ~ substr(sector, start = 1, stop = 3), # AIDdata, same as DAC 5 codes
-        vocab%in%c(5,10,11,999) & !is.na(dac3.code) & has.dac3==0 & certainty=="high" ~ dac3.code, 
-        TRUE ~ NA_character_),
-      certainty=ifelse((has.dac3==0 & !is.na(dac3))|(has.dac5==0 & !is.na(dac5)),"med",certainty))
+    certainty=ifelse((has.dac3==0 & !is.na(dac3))|(has.dac5==0 & !is.na(dac5)),"med",certainty)) #assign medium certainty to the ones that were translated
 
 table(sector.list.tmp$certainty)
 
