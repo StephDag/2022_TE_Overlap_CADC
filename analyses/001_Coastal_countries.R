@@ -5,23 +5,26 @@ eez <- read.csv(here("data","raw-data","List_territory","eez_territory_region.cs
 head(eez)
 dim(eez) # 221
 
+# list of countries with regions, etc.
+ctr.region <- read.csv(here("data","raw-data","ISO-3166-Countries-with-Regional-Codes-master","all","all.csv"))
+head(ctr.region)
+
 # iati list of countries
 ctr.iati <- read.csv(here("data","raw-data","Country.code.iati.csv"),stringsAsFactors = T,na.strings=NULL)
 
 # coastal countries
 ctr <- read.csv(here("data","raw-data","country-coastline-distance-master","coastlines.csv"))
+head(ctr)
+ctr[which(ctr$iso2 == ""),]
 ctr[which(ctr$iso2 == ""),"iso2"] <- c("NA","AN","PS")
+ctr[!ctr$iso2%in%ctr.region$alpha.2,]
 
-rm(coastal.ctr)
 coastal.ctr <- ctr %>% filter(coastline_wf >0)
-coastal.ctr[which(coastal.ctr$iso2 == ""),"iso2"] <- c("NA","AN")
-# list of countries with regions, etc.
-ctr.region <- read.csv(here("data","raw-data","ISO-3166-Countries-with-Regional-Codes-master","all","all.csv"))
-head(ctr.region)
 
 # create full country database
 coastal.ctr <- left_join(coastal.ctr,ctr.region,by=c("country"="name"))
 head(coastal.ctr);tail(coastal.ctr)
+coastal.ctr[which(coastal.ctr$iso2 == ""),"iso2"] <- c("NA","AN")
 
 # check
 #coastal.ctr %>% filter(country == "Namibia")
@@ -57,11 +60,11 @@ head(coastal.ctr);tail(coastal.ctr)
 #timezone          : the iana timezone id (see file timeZone.txt) varchar(40)
 #modification date
 
-  # geo.names for only coastal countries
+# geo.names for only coastal countries
 #geo.names.coastal <- geo.names %>%
 #  filter(country_code %in% coastal.ctr$iso2)
 #dim(geo.names.coastal)
-  # save
+# save
 #saveRDS(cities,here("data","derived-data","geo.names.coastal.rds"))
-  # load
+# load
 cities <- readRDS(here("data","derived-data","geo.names.coastal.rds"))
