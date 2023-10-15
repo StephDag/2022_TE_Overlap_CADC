@@ -1,19 +1,23 @@
 # Categorized geographic projects based based on coastal, sustainability (CADC) and sustainable land-based projects
-# outputs: 3 terrestrial raster of 5km resolution each
-# Stephanie D'Agata
+# outputs: dataset identifying potential CADC projects 
+# Stephanie D'Agata & David Gill
 # Sept 2023
-# Updates: Sept 2023
+# Updates: Oct 2023
 library(here)
 source(here("analyses","00_setup.R"))
 
-# load data
-all.gps.sp.100m.100km <- readRDS(here("data","derived-data","iati_GPS_db_100km_100m.rds"))
-# load sector code list
-sector.list <- import(here("data","derived-data","sector.list.coded.csv"))
+############################
+#   COASTAL COUNTRIES      #
+############################
+
+# load dataset with potential coastal countries
+iati.coastal <- readRDS(here("data","derived-data","all.potential.coastal.unique.rds"))
 
 #names(all.gps.sp.100m.100km)[grepl("languag",names(all.gps.sp.100m.100km))] # code to search column names
 #dim(all.gps.sp.100m.100km)
 
+
+########################################################################
 # list of keywords
 # number of projects by key words
 # updates on the 29/09/2023
@@ -22,7 +26,7 @@ key.marine <- c("\\bcoast","\\bmarin","\\bsea\\b","\\bseas\\b","\\bsea-\\b","\\b
                 "\\bseaweed","\\bcrustacean","\\bmollus","\\bwetland","\\btransitional water","\\blagoon","\\bsalt pond","bshell","\\bseamount","\\bmid-ocean ridge","\\bcentral gyre","\\bdeep sea","\\bship","\\bwater transport",
                 "\\bfinfish\\b", "\\bcontinental shelf","\\bsand","\\bnautical","\\batoll","\\bunderwater","\\bdemersal","\\baphotic", "pelagic","neritic","surf\\b","surf-\\b","diver\\b","dive\\b","SCUBA\\b","CPUE","\\bbivalve","\\bboat",
                 "\\bcaribbean biodiversity fund", "\\bclam", "\\bcockle", "\\bcrab", "\\bcruise","\\bdeep water", "\\bdesalini", "\\bdolphin", "\\bdredg", "\\bgrouper",
-                "\\bgulf", "\\bharbor", "\\bharbour", "\\binternational water", "\\blionfish", "\\bmpa", "\\bmussel", "\\bnaval", "\\boyster","\\bprawn", 
+                "\\bgulf", "\\bharbor", "\\bharbour",  "\\blionfish", "\\bmpa", "\\bmussel", "\\bnaval", "\\boyster","\\bprawn", 
                 "\\bproblue", "\\bsnapper", "\\bsaltwater", "\\bsargassum", "\\bshark", "\\bshrimp", "\\btuna", "\\bturtle", "\\bunclos", "\\bvessel", "\\bwhale", "\\bwharf",
                 "\\bcôte\\b","\\bcôtière","\\bcôtier","\\bpêche","\\bpêcheur","\\bpêcherie","\\bocéan","\\bleue","\\bplage",  # french translation
                 "\\bmaritime","\\blittoral","\\bherbier","\\bmarais salant\\b","\\bmarée","\\bvague","\\balgues","\\bdessalement","\\btransport maritime\\b","\\beaux usées\\b","\\bruisselement","\\bsous-marin",
@@ -35,8 +39,7 @@ key.sustainability <- c("\\bacidifica", "\\badapt", "\\badaptation", "\\bbio sph
                         "\\bspecies","\\beutriphication", "\\bhabitat", "\\biuu", "\\bmarine debris ", "\\bmarine energy", "\\bmarine protection", "\\bmitigate", "\\bnature-based solutions",
                         "capacity-build","capacity build","capacity develop", "\\bbadapt","\\bocean health","\\bocean protection", "\\bvulnerab", "tenure\\b", "TURF", "territorial user rights",
                         "\\boceanograph","\\boff-shore wind", "\\boffshore wind", "\\bover-fishing", "\\boverfishing","\\bclimat",
-                        "\\boxygen", "\\bpreserv", "\\bprotected area", "\\brenewable", "\\bresearch", "\\bresilien","\\bresponse preparedness", "\\brestoration", "\\brestore", "\\brestoring", "\\bscience",
-                        "\\bscientifi", "\\bSDG 14", "\\bsea level rise", "\\bsea-level rise", "\\bsequestration", "\\bslr","\\bsustainab", "\\btidal energy", "\\bwildlife", "\\bwind energy","\\bbblue",
+                        "\\boxygen", "\\bpreserv", "\\bprotected area", "\\brenewable", "\\bresilien","\\bresponse preparedness", "\\brestoration", "\\brestore", "\\brestoring", "\\bSDG 14", "\\bsea level rise", "\\bsea-level rise", "\\bsequestration", "\\bslr","\\bsustainab", "\\btidal energy", "\\bwildlife", "\\bwind energy","\\bbblue",
                         "\\bbmpa","\\bblmma", "\\bboecm", "reserve", "park","no-take","natural monument","enclosure","closure","wilderness area", "payment for ecosystem services", "PES", "\\bbMSC\\b","certification","eco-label", "ecotourism", ("communit((\\w+)(\\W+)){1,3}management\\b"), 
                         "conserv((\\w+)(\\W+)){1,3}management\\b", ("communit((\\w+)(\\W+)){1,3}conserv"), ("communit((\\w+)(\\W+)){1,3}fish"), ("communit((\\w+)(\\W+)){1,3}natural resource"), 
                         "comanagement\\b", "co-management\\b",
@@ -59,6 +62,22 @@ key.land <- c("\\bwastewater","\\bwaste water","\\brunoff","\\bmarine debris",
               "pollution des oceans","\\bdechets","pollution marine","traitement des eaux","eaux marines","pollution par les nutriments",
               "conservation des ressources en eau"," développement des bassins fluviaux")
 
+key.equity <- c("\\baccountab","\\baffordable housing","\\bageism","\\banti-discriminatory","\\banti-oppressive",
+                "\\banti-racist","\\bbasic living standards","\\bbasic services","\\bbenefit-sharing ","\\bbipoc","\\bburden ","\\bclassism ",
+                "\\bco-benefit ","\\bco-production","\\bcompensate ","\\bcompensation ","\\bconflict resolution","\\bconflict","\\bconsultation",
+                "\\bcorrectability","\\bcost-sharing","\\bcultural values","\\bdecision control", "\\bvoice","\\bdecolonization","\\bdignity","\\bdisabilit","\\bdisadvantaged",
+                "\\bdiscriminat","\\bdisparity","\\bdiverse groups","\\bempower","\\bend poverty","\\benvironmental and social safeguards framework","ESSF","\\bequal access",
+                "\\bequal opportunit","\\bequal pay","\\bequality","\\bequit","\\bethicality","\\bethnicity","\\bexploitation","\\bextreme poverty","\\bfair",
+                "\\bfemale","\\bfemale genital mutilation","\\bfeminis","\\bfinancial inclusion","\\bforced marriage","\\bfpic","\\bgender","\\bgini","\\bgirl","\\bgrievance",
+                "\\bhomeless","\\bhomophobia","\\bhuman rights","\\bhuman trafficking","\\bidentities","\\bimpoverished","\\binclusion","\\binclusiv",
+                "\\bincome distribution","\\bincome equality","\\bincome inequality","\\bindigenous","\\binequalit","\\binjustice","\\bknowledge systems","\\blgbtq",
+                "\\bmarginalise","\\bmarginalize","\\bmicrofinance","\\bminorit","\\bno poverty","\\bnon binary","\\bnon-binary","\\bnon-discriminat","\\bof color","\\bof colour","\\bparity",
+                "\\bparticipat","\\bpatriarchy","\\bpoor","\\bpoverty eradication","\\bpoverty line","\\bprivileged","\\bpro-poor","\\bqueer","\\brace","\\bracism","\\breconciliat",
+                "\\brefugee","\\breligion","\\breproductive health","\\breproductive rights","\\brights","\\bsafeguard","\\bsex and inequality","\\bsexes","\\bsexism","\\bsexual and reproductive health",
+                "\\bsexual exploitation","\\bsexual health","\\bsexual violence","\\bsocial inclusion","\\bsocial monitoring","\\bsocial protection","\\bsocial protection systems","\\bsocial safety","\\bsocial security",
+                "\\btrade-off","\\btradeoff","\\btraditional ecological knowledge","\\btraditional knowledge","\\btrafficking","\\btransgender","\\btrust","\\btrustworthiness",
+                "\\btwo-spirit","\\bunderserved","\\buniversal health coverage","\\bviolence against girls","\\bviolence against women","\\bviolence and girls","\\bviolence and women",
+                "\\bvulnerability","\\bvulnerable","\\bwealth distribution","\\bwelfare","\\bwomen","\\byouth")
 
 ############################
 #        COASTAL           #
@@ -66,16 +85,11 @@ key.land <- c("\\bwastewater","\\bwaste water","\\brunoff","\\bmarine debris",
 
 # new variable - 1/0 coastal
 all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(Year = substring(activity_date_iso_date,1,4)) %>% # start year # 392946    257
+  mutate(Year = substring(activity_date_iso_date,1,4),      # start year # 392946    257
+         comb = str_to_lower(paste(title_narrative,description_narrative, sep = ". "))) %>% 
   filter(Year %in% seq(2000,2022,1)) %>%
-  mutate(coastal.nar = ifelse(str_detect(description_narrative,paste0(key.marine, collapse="|")),1,0)) %>%
-  mutate(coastal.title = ifelse(str_detect(title_narrative,paste0(key.marine, collapse="|")),1,0))
-
-all.gps.sp.100m.100km$coastal <- ifelse(all.gps.sp.100m.100km$coastal.nar == 1 | all.gps.sp.100m.100km$coastal.title == 1, 1, 0)
-all.gps.sp.100m.100km$coastal[is.na(all.gps.sp.100m.100km$coastal)] = 0 # keep the NAs in title or narrative, since it might be filtered through the OECD codes
-all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(coastal = as.factor(coastal))
-
+  mutate(coastal= ifelse(str_detect(comb,paste0(key.marine, collapse="|")),1,0),
+         coastal= as.factor(ifelse(is.na(coastal),0,coastal))) # keep the NAs in title or narrative, since it might be filtered through the OECD codes
 summary(all.gps.sp.100m.100km$coastal) #         0:98451     1: 25260  
 
 ###########################################
@@ -84,16 +98,11 @@ summary(all.gps.sp.100m.100km$coastal) #         0:98451     1: 25260
 
 # new variable - 1/0 sustainability
 all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(Year = substring(activity_date_iso_date,1,4)) %>% # start year # 392946    257
+  mutate(Year = substring(activity_date_iso_date,1,4),      # start year # 392946    257
+         comb = str_to_lower(paste(title_narrative,description_narrative))) %>% 
   filter(Year %in% seq(2000,2022,1)) %>%
-  mutate(sustainable.nar = ifelse(str_detect(description_narrative,paste0(key.sustainability, collapse="|")),1,0)) %>%
-  mutate(sustainable.title = ifelse(str_detect(title_narrative,paste0(key.sustainability, collapse="|")),1,0))
-
-all.gps.sp.100m.100km$sustainable <- ifelse(all.gps.sp.100m.100km$sustainable.nar == 1 | all.gps.sp.100m.100km$sustainable.title == 1, 1, 0)
-all.gps.sp.100m.100km$sustainable[is.na(all.gps.sp.100m.100km$sustainable)] = 0 # keep the NAs in title or narrative, since it might be filtered through the OECD codes
-all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(sustainable = as.factor(sustainable))
-
+  mutate(sustainable= ifelse(str_detect(comb,paste0(key.sustainability, collapse="|")),1,0),
+         sustainable= as.factor(ifelse(is.na(sustainable),0,sustainable))) # keep the NAs in title or narrative, since it might be filtered through the OECD codes
 summary(all.gps.sp.100m.100km$sustainable) #      0: 62812      1: 60899 
 
 ###########################################
@@ -102,66 +111,83 @@ summary(all.gps.sp.100m.100km$sustainable) #      0: 62812      1: 60899
 
 # new variable - 1/0 land based
 all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(Year = substring(activity_date_iso_date,1,4)) %>% # start year # 392946    257
+  mutate(Year = substring(activity_date_iso_date,1,4),      # start year # 392946    257
+         comb = str_to_lower(paste(title_narrative,description_narrative))) %>% 
   filter(Year %in% seq(2000,2022,1)) %>%
-  mutate(land.nar = ifelse(str_detect(description_narrative,paste0(key.land, collapse="|")),1,0)) %>%
-  mutate(land.title = ifelse(str_detect(title_narrative,paste0(key.land, collapse="|")),1,0))
-
-all.gps.sp.100m.100km$land <- ifelse(all.gps.sp.100m.100km$land.nar == 1 | all.gps.sp.100m.100km$land.title == 1, 1, 0)
-all.gps.sp.100m.100km$land[is.na(all.gps.sp.100m.100km$land)] = 0 # keep the NAs in title or narrative, since it might be filtered through the OECD codes
-all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(land = as.factor(land))
-
+  mutate(land= ifelse(str_detect(comb,paste0(key.land, collapse="|")),1,0),
+         land= as.factor(ifelse(is.na(land),0,land))) # keep the NAs in title or narrative, since it might be filtered through the OECD codes
 summary(all.gps.sp.100m.100km$land) #      0: 121261      1: 2450
+
+#############################################
+#            equity keywords                #
+#############################################
+
+all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
+  mutate(Year = substring(activity_date_iso_date,1,4),      # start year # 392946    257
+         comb = str_to_lower(paste(title_narrative,description_narrative))) %>% 
+  filter(Year %in% seq(2000,2022,1)) %>%
+  mutate(equity= ifelse(str_detect(comb,paste0(key.equity, collapse="|")),1,0),
+         equity= as.factor(ifelse(is.na(equity),0,equity))) # keep the NAs in title or narrative, since it might be filtered through the OECD codes
+summary(all.gps.sp.100m.100km$equity) #      0: 121261      1: 2450
 
 #############################################
 #           add sector codes                #
 #############################################
 
+# load sector code list
+sector.list <- import(here("data","derived-data","sector.list.coded.csv"))
+#load dac code database
+dac.cadc <- import(here("data","derived-data","DAC.code.conversion.xlsx"),sheet="5-3 sector-CADC") %>%
+  select(dac5.code="code", dac3.code="category",cadc="CADC", climate,development,conservation)
+head(dac.cadc)
+table(dac.cadc$cadc)
+
+cadc.project.ids <- unique(sector.list$iati_identifier_bis[sector.list$cadc==1])
+climate.project.ids <- unique(sector.list$iati_identifier_bis[sector.list$climate==1])
+dev.project.ids <- unique(sector.list$iati_identifier_bis[sector.list$development==1])
+cons.project.ids <- unique(sector.list$iati_identifier_bis[sector.list$conservation==1])
+unique(sector.list$name[sector.list$cadc==1])
 
 
 
 
+# # 3. add Chechi's coding of project CADC type 
+# dac.climate <- dac.cadc %>% 
+#   filter(climate==1) %>% 
+#   distinct(dac5.code,.keep_all = T) 
+# dac.dev <- dac.cadc %>% 
+#   filter(development==1) %>% 
+#   distinct(dac5.code,.keep_all = T) 
+# dac.cons <- dac.cadc %>% 
+#   filter(conservation==1) %>% 
+#   distinct(dac5.code,.keep_all = T) 
+# 
+# # 3b. add DAC descriptive info 
+# sector.list.coded <- sector.list.tmp %>% 
+#   mutate(across(dac3.code,~ as.integer(.x))) %>% 
+#   left_join(dac.3.code,by=c("dac3"="dac3.code")) %>% 
+#   left_join(select(dac.5.code,-dac3.code),by=c("dac5"="dac5.code")) %>% 
+#   mutate(name=ifelse(!is.na(name.y),name.y,name.x), # use DAC5 description where available 
+#          description=ifelse(!is.na(description.y),description.y,description.x),
+#          status=ifelse(!is.na(status.y),status.y,status.x),
+#          climate=ifelse(dac3%in%dac.climate$dac3.code | dac5%in%dac.climate$dac5.code,1,climate),
+#          development=ifelse(dac3%in%dac.dev$dac3.code | dac5%in%dac.dev$dac5.code,1,development),
+#          conservation=ifelse(dac3%in%dac.cons$dac3.code | dac5%in%dac.cons$dac5.code,1,conservation)) %>% 
+#   select(temp.id:has.sdg,dac3,dac5,name:status,cadc:certainty)
+# names(sector.list.coded)
 
-#############################################
-#            equity keywords                #
-#############################################
-key.equity <- c("\\baccountability","\\baccountable ","\\baffordable housing","\\bageism","\\banti-discriminatory","\\banti-oppressive",
-                "\\banti-racist","\\bbasic living standards","\\bbasic services","\\bbenefit-sharing ","\\bbipoc","\\bburden ","\\bclassism ",
-                "\\bco-benefit ","\\bco-production","\\bcompensate ","\\bcompensation ","\\bconflict- resolution ","\\bconflict ","\\bconsultation ",
-                "\\bcorrectability","\\bcost-sharing","\\bculture","\\bdecision control voice","\\bdecolonization","\\bdignity","\\bdisabilit","\\bdisadvantaged",
-                "\\bdiscriminat","\\bdisparity","\\bdiverse groups ","\\bempower ","\\bend poverty","\\benvironmental and social safeguards framework","\\bequal access",
-                "\\bequal opportunit","\\bequal pay ","\\bequality ","\\bequit ","\\bessf ","\\bethicality ","\\bethnicity","\\bexploitation","\\bextreme poverty","\\bfair",
-                "\\bfemale","\\bfemale genital mutilation","\\bfeminis","\\bfinancial inclusion","\\bforced marriage","\\bfpic","\\bgender","\\bgini","\\bgirl","\\bgrievance",
-                "\\bhomeless","\\bhomophobia","\\bhuman rights","\\bhuman trafficking","\\bidentities","\\bimpoverished","\\binclusion","\\binclusiv","\\binclusive decision-making",
-                "\\bincome distribution","\\bincome equality","\\bincome inequality","\\bindigenous","\\binequalit","\\binjustice","\\bknowledge systems","\\blgbtq",
-   "\\bmarginalise","\\bmarginalize","\\bmicrofinance","\\bminorit","\\bno poverty","\\bnon binary","\\bnon-binary","\\bnon-discrimination","\\bof color","\\bof colour","\\bparity",
-   "\\bparticipat","\\bpatriarchy","\\bpoor","\\bpoor and vulnerable","\\bpoverty eradication","\\bpoverty line","\\bprivileged","\\bpro-poor ","\\bqueer","\\brace","\\bracism","\\breconciliation",
-   "\\brefugee","\\breligion","\\breproductive health","\\breproductive rights","\\brights","\\bsafeguard","\\bsex and inequality","\\bsexes","\\bsexism","\\bsexual and reproductive health",
-   "\\bsexual exploitation","\\bsexual health","\\bsexual violence","\\bsocial inclusion","\\bsocial monitoring","\\bsocial protection","\\bsocial protection systems","\\bsocial safety","\\bsocial security",
-   "\\btrade-off","\\btradeoff","\\btraditional ecological knowledge","\\btraditional knowledge","\\btrafficking","\\btransgender","\\btrus","\\btrustworthiness","\\btruth and reconciliation",
-   "\\btwo-spirit","\\bunderserved","\\buniversal health coverage","\\bviolence against girls","\\bviolence against women","\\bviolence and girls","\\bviolence and women",
-   "\\bvulnerability","\\bvulnerable","\\bwealth distribution","\\bwelfare","\\bwomen","\\byouth")
 
-
-all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(equity.nar = ifelse(str_detect(description_narrative,paste0(key.equity, collapse="|")),1,0)) %>%
-  mutate(equity.title = ifelse(str_detect(title_narrative,paste0(key.equity, collapse="|")),1,0))
-
-all.gps.sp.100m.100km$equity <- ifelse(all.gps.sp.100m.100km$equity.nar == 1 | all.gps.sp.100m.100km$equity.title == 1, 1, 0)
-all.gps.sp.100m.100km$equity[is.na(all.gps.sp.100m.100km$equity)] = 0 # keep the NAs in title or narrative, since it might be filtered through the OECD codes
-all.gps.sp.100m.100km <- all.gps.sp.100m.100km %>%
-  mutate(equity = as.factor(equity))
 
 ################################################
 #           quick look into db                 #
 ################################################
-##### estimate the 
+
+##### estimate the number of CADC projects
 all.gps.sp.100m.100km.CADC <- all.gps.sp.100m.100km %>%
   filter((coastal == 1 & sustainable == 1) | land == 1)
 length(unique(all.gps.sp.100m.100km.CADC$iati_identifier)) # 7612 projects, both coastal and sustainable and potentially land-based
 
-# spot check to see if these are indeed
+# spot check to see if these are indeed CADC
 keyword.check <- all.gps.sp.100m.100km.CADC %>% 
   as.data.frame() %>% 
   filter((!is.na(document_link_url)|!is.na(result_document_link_url)) & equity==1) %>% 
@@ -172,7 +198,7 @@ keyword.check <- all.gps.sp.100m.100km.CADC %>%
 samp.rows <-sample(length(unique(keyword.check$iati_identifier_bis)),500)
 word.check <- keyword.check %>% 
   distinct(iati_identifier_bis,.keep_all = T) %>% 
-  mutate(comb=paste(title_narrative,description_narrative)) %>% 
+  mutate(comb=tolower(paste(title_narrative,description_narrative)))%>% 
   slice(samp.rows) %>% 
   select(iati_identifier_bis,coastal,sustainable,land,equity,title_narrative,description_narrative,comb)
 
@@ -184,8 +210,8 @@ for (i in 1:nrow(word.check)){
   for (j in 1:length(key.marine)){
     mar.term <- key.marine[j]
     if(str_detect(word.check$comb[i],mar.term)==TRUE){
-    print(paste("Marine term: ", mar.term))
-    word.check$marine.word[i] <- mar.term
+      print(paste("Marine term: ", mar.term))
+      word.check$marine.word[i] <- mar.term
     }
   }
 }
@@ -241,7 +267,90 @@ word.check %>%
 
 export(word.check,"data/keyword_check.csv")
 
+### test potential terms
+
+test.key.equity <- c("\\badaptive management","\\bambassadors","\\bchampions","\\bcorrectability","\\bfemale","\\bgirl","\\bjustice","\\bleadership",
+                     "\\bmicrofinance","\\bpoverty line","\\breligio*","\\bsexes","\\bsocial monitoring","\\btrade-off","\\btradeoff",
+                     "\\bunderserved", "\\bcompensation", "\\bsexes", "\\bempower", "\\bsocial security")
+test.key.marine <- c("\\bdivers\\b", "\\blittoral", "\\bwave", "\\binternational water", "\\bsand\\b", "\\bdredg",
+                     "\\boffshore", "\\bunderwater ", "\\beep water", "\\bharbor", "\\bharbour","\\bship")
+test.key.sustain <- c("\\bmitigate","\\bparc","\\bpark", "\\bscience","\\bscientific", "\\bresearch", "\\bclosure", 
+                      "\\badapt", "\\bPES", "\\bpreserve")
+
+test.equity <- all.gps.sp.100m.100km %>%
+  as.data.frame() %>% 
+  mutate(Year = substring(activity_date_iso_date,1,4),      # start year # 392946    257
+         comb = str_to_lower(paste(title_narrative,description_narrative))) %>% 
+  filter(Year %in% seq(2000,2022,1) & coastal==1) %>%
+  mutate(equity= ifelse(str_detect(comb,paste0(test.key.equity, collapse="|")),1,0),
+         equity= as.factor(ifelse(is.na(equity),0,equity))) %>%  # keep the NAs in title or narrative, since it might be filtered through the OECD codes
+  filter(equity==1) %>% 
+  select(iati_identifier_bis,comb) %>% 
+  distinct(iati_identifier_bis,.keep_all = T)
+
+test.equity$equity.word <- NA
+for (i in 1:nrow(test.equity)){
+  for (j in 1:length(test.key.equity)){
+    equity.term <- test.key.equity[j]
+    if(str_detect(test.equity$comb[i],equity.term)==TRUE){
+      test.equity$equity.word[i] <- equity.term
+    }
+  }
+}
+
+export(test.equity,"data/equity_keyword_check.csv")
+
+test.marine <- all.gps.sp.100m.100km %>%
+  as.data.frame() %>% 
+  mutate(Year = substring(activity_date_iso_date,1,4),      # start year # 392946    257
+         comb = str_to_lower(paste(title_narrative,description_narrative))) %>% 
+  filter(Year %in% seq(2000,2022,1)) %>%
+  mutate(test.marine= ifelse(str_detect(comb,paste0(test.key.marine, collapse="|")),1,0),
+         test.marine= as.factor(ifelse(is.na(test.marine),0,test.marine)),
+         test.sustain= ifelse(str_detect(comb,paste0(test.key.sustain, collapse="|")),1,0),
+         test.sustain= as.factor(ifelse(is.na(test.sustain),0,test.sustain))) %>%  # keep the NAs in title or narrative, since it might be filtered through the OECD codes
+  filter(test.marine==1 |test.sustain==1) %>% 
+  select(iati_identifier,comb,coastal) %>% 
+  distinct(iati_identifier,.keep_all = T)
+
+test.marine$marine.word <- NA
+for (i in 1:nrow(test.marine)){
+  for (j in 1:length(test.key.marine)){
+    marine.term <- test.key.marine[j]
+    if(str_detect(test.marine$comb[i],marine.term)==TRUE){
+      print(paste(i,"Marine term: ", marine.term))
+      test.marine$marine.word[i] <- marine.term
+    }
+  }
+}
+test.marine$sustain.word <- NA
+for (i in 1:nrow(test.marine)){
+  for (j in 1:length(test.key.sustain)){
+    sustain.term <- test.key.sustain[j]
+    if(str_detect(test.marine$comb[i],sustain.term)==TRUE){
+      print(paste(i,"sustain term: ", sustain.term))
+      test.marine$sustain.word[i] <- sustain.term
+    }
+  }
+}
+export(test.marine,"data/marine_keyword_check.csv")
+
+# convert to RIS
+test.marine.ris <- test.marine %>% 
+  select(TI=iati_identifier_bis,
+         ABST=comb)
+
+detect_parser(test.marine.ris) # = "parse_ris"
+test.marine.ris <- parse_ris(test.marine.ris)
+synthesisr::write_refs(test.marine.ris, tag_naming = "synthesisr", format = "ris", "data/marine_keyword_check.ris")
+export(test.marine.ris,"data/marine_keyword_check.ris.csv")
+convert("data/marine_keyword_check.ris.csv", "data/marine_keyword_check.ris")
 ##### save the coded/sectors, keywords full db
 saveRDS(all.gps.sp.100m.100km.CADC,here("data","derived-data","iati_GPS_db_100km_100m_keywords_sectors.rds"))
 dim(all.gps.sp.100m.100km.CADC)
+
+
+# - Potential words
+#key.equity.test <- cc("\\badaptive management","\\bambassadors","\\bchampions","\\bcorrectability","\\bfemale","\\bgirl*","\\bjustice","\\bleadership","\\bmicrofinance","\\bpoverty line","\\breligio*","\\bsexes","\\bsocial monitoring","\\btrade-off*","\\btradeoff*")
+
 
