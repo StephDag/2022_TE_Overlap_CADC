@@ -181,6 +181,54 @@ unique(sector.list$name[sector.list$cadc==1])
 ################################################
 #           quick look into db                 #
 ################################################
+# alternative way to find matching project along with terms
+iati.coastal.to.search <- iati.coastal %>% 
+  mutate(Year = substring(activity_date_iso_date,1,4),      # start year # 392946    257
+         comb = str_to_lower(paste(title_narrative,description_narrative))) %>% # combine two fields to search
+  filter(Year %in% seq(2000,2022,1)) %>% 
+  select(-c(recipient_country_narrative,activity_date_iso_date,title_narrative,description_narrative)) %>% 
+  distinct(iati_identifier,.keep_all = T)
+
+system.time(
+  iati.coastal2 <-  iati.coastal.to.search%>% 
+    rowwise() %>% 
+    mutate(marine.term= paste(unique(str_extract_all(comb,paste0(key.marine, collapse="|"))[[1]]),collapse="; "),
+           n.marine.term=str_count(marine.term, '\\w+'),
+           coastal=ifelse(n.marine.term>1,1,0),
+           sustain.term= paste(unique(str_extract_all(comb,paste0(key.sustainability, collapse="|"))[[1]]),collapse="; "),
+           n.sustain.term=str_count(sustain.term, '\\w+'),
+           sustainability=ifelse(n.sustain.term>1,1,0),
+           land.term= paste(unique(str_extract_all(comb,paste0(key.land, collapse="|"))[[1]]),collapse="; "),
+           n.land.term=str_count(land.term, '\\w+'),
+           land=ifelse(n.land.term>1,1,0),
+           equity.term= paste(unique(str_extract_all(comb,paste0(key.equity, collapse="|"))[[1]]),collapse="; "),
+           n.equity.term=str_count(equity.term, '\\w+'),
+           equity=ifelse(n.equity.term>1,1,0))
+)
+
+##### select coastal projects
+iati.coastal3 <- iati.coastal2 %>%
+  filter((coastal == 1 & sustainable == 1) | land == 1)
+length(unique(iati.coastal3$iati_identifier)) # 7612 projects, both coastal and sustainable and potentially land-based
+
+# ID terms that potentially not relevant
+iati.marine.check <- iati.coastal2 %>% 
+  filter(n.marine.term%in%c(1,2))
+export(word.check,"data/data_check/marine_keyword_check.csv")
+iati.sustain.check <- iati.coastal2 %>% 
+  filter(n.marine.term > 1 & n.sustain.term%in%c(1,2))
+export(word.check,"data/data_check/sustain_keyword_check.csv")
+iati.land.check <- iati.coastal2 %>% 
+  filter(land==1)
+export(word.check,"data/data_check/land_keyword_check.csv")
+iati.equity.check <- iati.coastal2 %>% 
+  filter(equity==1)
+export(word.check,"data/data_check/equity_keyword_check.csv")
+
+
+
+
+
 
 ##### estimate the number of CADC projects
 all.gps.sp.100m.100km.CADC <- all.gps.sp.100m.100km %>%
