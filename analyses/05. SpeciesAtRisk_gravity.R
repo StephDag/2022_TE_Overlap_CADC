@@ -153,41 +153,42 @@ results.sp.count.risk.df.full <- results.sp.count.risk.sf %>%
   mutate(mean.count.grav.V2 = mean.count/((distance/1000)^2)) %>%
   mutate(mean.count.grav.V2.log = log(mean.count.grav.V2+1)) %>%
   mutate(mean.count.grav.V2.log.norm = normalize(mean.count.grav.V2.log,na.rm = TRUE))
-  
 
-hist(results.sp.count.risk.df.full$mean.count.grav.V2.log.norm)  
- # mutate(mean.count.grav.log = log(results.sp.count.risk.sf$mean.count.grav+1))
+results.sp.count.risk.df.full$mean.count.grav.norm <- NULL
+#head(results.sp.count.risk.df.full)
+#hist(results.sp.count.risk.df.full$mean.count.grav.V2.log.norm)  
 
 # transform to sf 
 results.sp.count.risk.sf <- st_as_sf(x = results.sp.count.risk.df.full,                         
                                      geometry = results.sp.count.risk.df.full$point.geometry,
                                      crs = sf::st_crs(imp_pct))
-saveRDS(results.sp.count.risk.sf, here("data","derived-data","results.sp.count.risk.rds"))
-
-
+#saveRDS(results.sp.count.risk.df.full, here("data","derived-data","results.sp.count.risk.corrected.rds"))
 
 gc()
-# rasterize 
-#sp.count.rast.ter<- stars::st_rasterize(results.sp.count.risk.sf %>% dplyr::select(mean.count.grav.norm, geometry),
-#                                stars::st_as_stars(st_bbox(pop.world.nc.100km.b), dx=res(pop.world.nc.100km.b)[1],dy=res(pop.world.nc.100km.b)[2],
-#                                            values = NA_real_))
 
-sp.count.rast.ter<- stars::st_rasterize(results.sp.count.risk.sf %>% dplyr::select(mean.count.grav.V2.log.norm, geometry),
+# rasterize : # pas certaine que ça fonctionne
+results.sp.count.risk.df.full <- readRDS(here("data","derived-data","results.sp.count.risk.corrected.rds"))
+
+sp.count.rast.ter<- stars::st_rasterize(results.sp.count.risk.df.full %>% dplyr::select(mean.count.grav.V2.log, geometry),
                                         stars::st_as_stars(st_bbox(pop.world.nc.100km.b), dx=res(pop.world.nc.100km.b)[1],dy=res(pop.world.nc.100km.b)[2],
                                                            values = NA_real_))
-
-
-library(sf)
-# Assuming 'your_sf_data' is your sf object
-# and 'raster_resolution' is the desired resolution for rasterization
-raster_resolution <- 
-rasterized <- st_rasterize(results.sp.count.risk.sf %>% dplyr::select(mean.count.grav.V2.log.norm, geometry), width = raster_resolution, height = raster_resolution)
 
 sp.count.rast.ter <- terra::rast(sp.count.rast.ter)
 gc()
 # save as tiff
 writeRaster(sp.count.rast.ter, here("data","derived-data","sp.count.rast.ter.grav.tif"),overwrite=T)
 gc()
+
+################### STOP for now 13/11/2023 #########################
+
+
+
+
+
+
+
+
+
 
 ##########################################
 #   species at risk - percentage         #
