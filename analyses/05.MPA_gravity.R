@@ -25,11 +25,26 @@ sf_obj <- st_as_sf(values.xy, coords = c("lon", "lat"),crs=crs(imp_count))
 MPA.full.proj <- readRDS(here("data","derived-data","MPA.full.mollweide.rds"))
 
 #   # source the marine_terrestial_raster.r function: 1. find within the 120km buffer the closest imp_count cell, and 2. compute the mean imp.count and gravity in a 25km buffer around this point
-source(here::here("R","marine_terrestial_mpa.R"))
+source(here::here("R","marine_terrestrial_mpa.R"))
+
+##### run by chunks
+# Define the size of each chunk
+#chunk_size <- 1000
+#chunk_size <- 20
+chunk_size <- 2
+
+# number of rows of sf
+chunks.groups <- rep(seq_len(ceiling(dim(sf_obj)[1]/ chunk_size)),each = chunk_size,length.out = dim(sf_obj)[1])
+
+# split by chunks
+sf_obj.chunks <- split(sf_obj,f = chunks.groups)
+
+# check dim (should be 1000 for each, and the last one == 549)
+lapply(sf_obj.chunks,dim)
 
 # inputs
 # exemple with 10 point
-#point <- sf_obj[sample(1:8428193,1),]
+point <- sf_obj[sample(1:8428193,1),]
 # full populated raster
 point=sf_obj
 buffer_ter=150000 # 150km terrestrial raster
@@ -43,6 +58,27 @@ source(here("R","NormMinMax.R"))
 #################################
 #         MPA gravity           #
 #################################
+
+
+mcf<-function(f){ function(...) {tryCatch({f(...)} , error=function(e) e)}}
+biodiv=imp_count
+rm(results.sp.count.risk.df.full)
+results.sp.count.risk.df.full <- data.frame()
+
+for (i in 1:length(sf_obj.chunks)){
+  # for (i in c(1, 701)){
+  print(paste("i=",i))
+  point <- sf_obj.chunks[[3000]]
+  results.sp.count.risk.temp <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestrial_mpa, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mpa=mpa,mc.cores=n.cores)
+  #results.sp.count.risk.temp <- mclapply(split(point, seq(nrow(point))), FUN=mcf(marine_terrestial_raster), buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=n.cores)
+  #results.sp.count.risk <- mclapply(split(point[[1]], seq(nrow(point[[1]]))), FUN=mcf(marine_terrestial_raster), buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=n.cores)
+  results.sp.count.risk.df.temp <- do.call(rbind.data.frame, results.sp.count.risk.temp)
+  results.sp.count.risk.df.full <- rbind(results.sp.count.risk.df.full,results.sp.count.risk.df.temp)
+  # save dataframe in case of chrash
+  saveRDS(results.sp.count.risk.df.full, here("data","derived-data","results.sp.count.risk.chunks.rds"))
+  
+}
+
 
 results.mpa <- mclapply(split(point, seq(nrow(point))), FUN=marine_terrestrial_mpa, buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=n.cores,mpa=mpa)
 results.mpa.df <- do.call(rbind.data.frame, results.mpa)

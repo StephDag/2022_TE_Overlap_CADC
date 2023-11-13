@@ -77,6 +77,6 @@ marine_terrestrial_mpa <- function(point,buffer_ter,buffer_marine,mpa,biodiv) { 
   mpa.grav <- mpa.area/as.numeric(index[3]^2);mpa.grav
   
   # return as a lits
-  data.frame(point = point, mpa.area.buffer=mpa.area,distance=as.numeric(index[3]), mpa.grav = mpa.grav)
+  data.frame(point = point, mpa.area.buffer=mpa.area,marine.pt=xy.index,distance=as.numeric(index[3]), mpa.grav = mpa.grav)
   
 }

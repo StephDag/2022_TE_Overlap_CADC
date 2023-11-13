@@ -80,3 +80,10 @@ MPA.full.proj <- MPA.full.shp.pts %>%
 
   # save as rds
 saveRDS(MPA.full.proj,here("data","derived-data","MPA.full.mollweide.rds"))
+
+# rasterized
+v <- vect(f)
+r <- rast(v, ncols=75, nrows=100)
+z <- rasterize(v, r, "NAME_2")
+plot(z)
+lines(v)

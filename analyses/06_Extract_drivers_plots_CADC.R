@@ -40,17 +40,6 @@ cum_imp_2015_scale <- cum_imp_2015 %>%
 dim(cum_imp_2015_scale)
 head(cum_imp_2015_scale)
 
-# add biodiversity/habitat from OHI index
-OHI.global <- read.csv(here("data","raw-data","OHI_2020","OHI_final_formatted_scores_2020-10-01.csv"))
-
-  # dimension to use: 
-#future  pressures resilience      score     status      trend 
-
-OHI.global.biodiv <- OHI.global %>%
-  filter(long_goal == "Biodiversity" & scenario == "2020") %>%
-  filter(dimension == "trend") # to change depending on what we want
-head(OHI.global.biodiv)
-
 # merge eez and OHI to retrieve country information
 rm(OHI.global.eez)
 OHI.global.eez <- OHI.global.biodiv %>%
