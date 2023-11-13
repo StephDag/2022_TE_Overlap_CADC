@@ -74,7 +74,7 @@ marine_terrestrial_mpa <- function(point,buffer_ter,buffer_marine,mpa,biodiv) { 
   #crs(mpa.buffer_25) == crs(imp_count)
   
   # gravity ofmpa
-  mpa.grav <- mpa.area/as.numeric(index[3]^2);mpa.grav
+  mpa.grav <- mpa.area/(as.numeric((index[3]/1000)^2));mpa.grav # m2 mpa area / distance^2 (km)
   
   # return as a lits
   data.frame(point = point, mpa.area.buffer=mpa.area,marine.pt=xy.index,distance=as.numeric(index[3]), mpa.grav = mpa.grav)
