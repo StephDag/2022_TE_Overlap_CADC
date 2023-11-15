@@ -1,3 +1,5 @@
+# source country files
+source(here("analyses","001_Coastal_countries.R"))
 
 ##### extract drivers information for each projects
 
@@ -38,22 +40,14 @@ cum_imp_2015_scale <- cum_imp_2015 %>%
 dim(cum_imp_2015_scale)
 head(cum_imp_2015_scale)
 
-# add biodiversity/habitat from OHI index
-OHI.global <- read.csv(here("data","raw-data","OHI_2020","OHI_final_formatted_scores_2020-10-01.csv"))
-
-OHI.global.biodiv <- OHI.global %>%
-  filter(long_goal == "Biodiversity" & scenario == "2020") %>%
-  filter(dimension == "trend")
-head(OHI.global.biodiv)
-
-# merge eez and OHI
+# merge eez and OHI to retrieve country information
 rm(OHI.global.eez)
 OHI.global.eez <- OHI.global.biodiv %>%
   left_join(eez,by=c("region_name"="rgn_name"))
 # merge OHI and impacts
 rm(OHI.global.eez.impact)
 OHI.global.eez.impact <- OHI.global.eez %>%
-  left_join(cum_imp_2015_scale,by=c("region_name"="eez_name"))
+  left_join(cum_imp_2015_scale,by=c("region_name"="eez_name")) # eez name, not ISO3
 
 # keep only main territory for now
 OHI.global.eez.impact.short <- OHI.global.eez.impact[which(OHI.global.eez.impact$region_name %in% ctr$country),]

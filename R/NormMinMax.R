@@ -1,5 +1,6 @@
 
 # normalize min - max
-normalize <- function(x, na.rm = TRUE) {
-  return((x- min(x)) /(max(x)-min(x)))
+normalize <- function(x, ...) {
+  return((x - min(x, ...)) /(max(x, ...) - min(x, ...)))
 }
+
