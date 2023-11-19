@@ -25,14 +25,14 @@ remotes::install_github("wmgeolab/rgeoboundaries")
 remotes::install_github("ropensci/rnaturalearthhires")
 
 
-x <- c("here","dplyr","janitor","tidyverse","tidytext","strex","readxl","ggpubr","scico","ggrepel",
+x <- c("here","dplyr","janitor","tidytext","strex","readxl","ggpubr","scico","ggrepel",
        "rnaturalearth","rnaturalearthdata","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",
        "wordcloud","RColorBrewer","wordcloud2","tm","data.table","rutils",
        "foreach","doParallel","doSNOW",
        # "tcltk",
        "svMisc","elevatr",
        "dbscan","rgeoboundaries","ncdf4","RANN","mapview","sf","stars",
-       "pdftools")
+       "pdftools","tidyverse")
 
 lapply(x, library, character.only = TRUE)
 

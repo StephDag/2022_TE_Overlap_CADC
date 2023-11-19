@@ -60,11 +60,11 @@ coastal.ctr[which(coastal.ctr$iso2 == ""),"iso2"] <- c("NA","AN")
 #timezone          : the iana timezone id (see file timeZone.txt) varchar(40)
 #modification date
 
-# geo.names for only coastal countries
+  # geo.names for only coastal countries
 #geo.names.coastal <- geo.names %>%
 #  filter(country_code %in% coastal.ctr$iso2)
 #dim(geo.names.coastal)
-# save
+  # save
 #saveRDS(cities,here("data","derived-data","geo.names.coastal.rds"))
-# load
+  # load
 cities <- readRDS(here("data","derived-data","geo.names.coastal.rds"))
