@@ -11,7 +11,7 @@ source(here("analyses","00_setup.R"))
 ############################
 
 # load dataset with potential projects in coastal countries
-iati.coastal <- readRDS(here("data","derived-data","all.potential.coastal.unique.rds"))
+oecd.dat <- import(here("data","raw-data","ocean_ODA_2010_2021.csv"))
 
 #names(all.gps.sp.100m.100km)[grepl("languag",names(all.gps.sp.100m.100km))] # code to search column names
 #dim(all.gps.sp.100m.100km)
@@ -228,19 +228,19 @@ distrib.list <- equity.list$keyword[!is.na(equity.list$Distributional)]
 
 #----- Identify terms in project title and description ----
 # alternative way to find matching project along with terms
-iati.coastal.to.search <- iati.coastal %>% 
-  mutate(Year = substring(activity_date_iso_date,1,4),      # start year # 392946    257
-         comb = str_to_lower(paste(title_narrative,description_narrative))) %>% # combine two fields to search
-  filter(Year %in% seq(2000,2022,1)) %>% 
-  select(-c(recipient_country_narrative,activity_date_iso_date,title_narrative,description_narrative)) %>% 
-  distinct(iati_identifier,.keep_all = T)
-
+oecd.dat.to.search <- oecd.dat %>% 
+  mutate(id=row_number(),
+         comb = str_to_lower(paste(project,long_description,purpose,sector_name))) %>% # combine two fields to search
+  select(-c(project,long_description,purpose,sector_name),
+         -starts_with("V")) %>% 
+  select(id,everything())
+names(oecd.dat.to.search)
 # take a subsample for keyword validation
-iati.sample <- slice_sample(iati.coastal.to.search,prop=0.25) 
+oecd.sample <- slice_sample(oecd.dat.to.search,prop=0.25) 
 
 # identify matching terms
 start.time <- Sys.time()
-iati.coastal2 <-  iati.sample %>% 
+oecd.dat2 <-  oecd.dat.to.search %>% 
     rowwise() %>% 
     mutate(marine.term= paste(unique(str_extract_all(comb,paste0(key.marine, collapse="|"))[[1]]),collapse="; "), # extract all matching terms
            n.marine.term=str_count(marine.term, '\\w+'), # count # different terms identified
@@ -256,7 +256,7 @@ iati.coastal2 <-  iati.sample %>%
            equity=ifelse(n.equity.term>1,1,0))
 
 # identify high/low confidence projects
-iati.coastal2 <- iati.coastal2 %>%
+oecd.dat2 <- oecd.dat2 %>%
   mutate(
     marine.confid = case_when(
       n.marine.term == 0 ~ "NA",
@@ -278,30 +278,26 @@ iati.coastal2 <- iati.coastal2 %>%
       n.equity.term == 1 & grepl(paste0(equity.check.confid, collapse="|"),equity.term) ~ "check",
       n.equity.term == 1 & grepl(paste0(equity.low.confid, collapse="|"),equity.term) ~ "low",
       TRUE ~ "high"),
-    # recognition = ifelse(grepl(paste0(recogn.list, collapse="|"),equity.term),1,0),
+    recognition = ifelse(grepl(paste0(recogn.list, collapse="|"),equity.term),1,0),
     procedural = ifelse(grepl(paste0(proc.list, collapse="|"),equity.term),1,0),
-    distributional = ifelse(grepl(paste0(distrib.list, collapse="|"),equity.term),1,0)) %>% 
-    select(iati_identifier:marine,marine.confid,
-           sustain.term:sustainability,sustain.confid,
-           land.term:land,land.confid,
-           equity.term:equity,distributional)
-
+    distributional = ifelse(grepl(paste0(distrib.list, collapse="|"),equity.term),1,0)
+    
+  ) 
 # total time
 Sys.time()-start.time
-export(iati.coastal2,here("data","data_check","iati_coastal_check.csv"))
 
-#check results
-term.check <- iati.coastal2 %>% 
-  filter(n.marine.term == 1 | n.sustain.term == 1 | n.land.term == 1 | n.equity.term == 1)
-    
-View(term.check)
-export(term.check,"data/data_check/keyword_check.csv")
-
+# #check results
+# term.check <- oecd.dat2 %>% 
+#   filter(n.marine.term == 1 | n.sustain.term == 1 | n.land.term == 1 | n.equity.term == 1)
+#     
+# View(term.check)
+# export(term.check,"data/data_check/keyword_check.csv")
+export(oecd.dat2,here("data","data_check","ocean_ODA_2010_2021_equity.csv"))
 
 ##### select sustainable ocean economy (CADC) projects
-iati.coastal3 <- iati.coastal2 %>%
+oecd.dat3 <- oecd.dat2 %>%
   filter((marine == 1 & sustainable == 1) | land == 1)
-length(unique(iati.coastal3$iati_identifier)) # 7612 projects, both coastal and sustainable and potentially land-based
+length(unique(oecd.dat3$iati_identifier)) # 7612 projects, both coastal and sustainable and potentially land-based
 
 
 #----- previous code----- #
