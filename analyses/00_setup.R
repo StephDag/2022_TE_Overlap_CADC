@@ -32,7 +32,8 @@ x <- c("here","dplyr","janitor","tidytext","strex","readxl","ggpubr","scico","gg
        # "tcltk",
        "svMisc","elevatr",
        "dbscan","rgeoboundaries","ncdf4","RANN","mapview","sf","stars",
-       "pdftools","tidyverse")
+       "pdftools","tidyverse",
+       "factoextra","vegan","GWmodel","ggrepel")
 
 lapply(x, library, character.only = TRUE)
 

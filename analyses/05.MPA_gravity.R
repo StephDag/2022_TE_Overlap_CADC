@@ -12,7 +12,7 @@ source(here::here("analyses","00_setup.R"))
 imp_count  <- rast(here("data","raw-data","Ohara2021_Science","impact_all_2013.tif"))
 plot(imp_count)
 
-#### load ropped 100km populated raster
+#### load cropped 100km populated raster
 pop.world.nc.100km.b <- rast(here("data","derived-data","pop.world.nc.100km.b_100km.tif"))
 plot(pop.world.nc.100km.b)
 
@@ -78,7 +78,7 @@ for (i in 1:length(sf_obj.chunks)){
 }
 
 # compute MPA gravity
-results.mpa.df <- results.sp.count.risk.sf %>%
+results.mpa.df <- results.mpa.df.full %>%
   mutate(mean.MPA.grav = mpa.area.buffer/((distance/1000)^2)) %>%
   mutate(mean.MPA.grav.log = log(mean.MPA.grav+1)) %>%
   mutate(mean.MPA.grav.log.norm = normalize(mean.MPA.grav.log,na.rm = TRUE))

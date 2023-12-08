@@ -138,7 +138,7 @@ for (i in 1:length(sf_obj.chunks)){
   #results.sp.count.risk <- mclapply(split(point[[1]], seq(nrow(point[[1]]))), FUN=mcf(marine_terrestial_raster), buffer_ter=buffer_ter, buffer_marine=buffer_marine, biodiv=biodiv,mc.cores=n.cores)
   results.sp.count.risk.df.temp <- do.call(rbind.data.frame, results.sp.count.risk.temp)
   results.sp.count.risk.df.full <- rbind(results.sp.count.risk.df.full,results.sp.count.risk.df.temp)
-  # save dataframe in case of chrash
+  # save dataframe in case of crash
   saveRDS(results.sp.count.risk.df.full, here("data","derived-data","results.sp.count.risk.chunks.rds"))
 
 }

@@ -1,8 +1,8 @@
 
 # test
 #point <- sf_obj[sample(1:8428193,10),]
-#buffer_ter=150000 # 150km
-#buffer_marine=20000 # 20km
+buffer_ter=150000 # 150km
+buffer_marine=20000 # 20km
 #mpa=MPA.full.proj
 #biodiv=imp_count
 
