@@ -240,7 +240,7 @@ iati.sample <- slice_sample(iati.coastal.to.search,prop=0.25)
 
 # identify matching terms
 start.time <- Sys.time()
-iati.coastal2 <-  iati.sample %>% 
+iati.coastal2 <-  iati.coastal.to.search %>% 
     rowwise() %>% 
     mutate(marine.term= paste(unique(str_extract_all(comb,paste0(key.marine, collapse="|"))[[1]]),collapse="; "), # extract all matching terms
            n.marine.term=str_count(marine.term, '\\w+'), # count # different terms identified
@@ -278,16 +278,46 @@ iati.coastal2 <- iati.coastal2 %>%
       n.equity.term == 1 & grepl(paste0(equity.check.confid, collapse="|"),equity.term) ~ "check",
       n.equity.term == 1 & grepl(paste0(equity.low.confid, collapse="|"),equity.term) ~ "low",
       TRUE ~ "high"),
-    # recognition = ifelse(grepl(paste0(recogn.list, collapse="|"),equity.term),1,0),
+    recognition = ifelse(grepl(paste0(recogn.list, collapse="|"),equity.term),1,0),
     procedural = ifelse(grepl(paste0(proc.list, collapse="|"),equity.term),1,0),
     distributional = ifelse(grepl(paste0(distrib.list, collapse="|"),equity.term),1,0)) %>% 
     select(iati_identifier:marine,marine.confid,
            sustain.term:sustainability,sustain.confid,
            land.term:land,land.confid,
-           equity.term:equity,distributional)
+           equity.term:equity.confid,recognition:distributional)
 
 # total time
 Sys.time()-start.time
+
+# recode CADC and equity dummy variables based on current review (temporary)
+iati.coastal3 <-  iati.coastal2 %>% 
+  mutate(  
+    marine = case_when(
+      n.marine.term == 0 ~ 0,
+      n.marine.term > 1 ~ 1,
+      n.marine.term == 1 & marine.confid == "high" ~ 1, # high confidence = matches 1 high confidence term or >1 term
+      n.marine.term == 1 & marine.confid%in%c("low","check") ~ 2),
+    sustainability = case_when(
+      sustain.term == 0 ~ 0,
+      sustain.term > 1 ~ 1,
+      sustain.term == 1 & sustain.confid == "high" ~ 1, # high confidence = matches 1 high confidence term or >1 term
+      sustain.term == 1 & sustain.confid%in%c("low","check") ~ 2),
+    land = case_when(
+      land.term == 0 ~ 0,
+      land.term > 1 ~ 1,
+      land.term == 1 & land.confid == "high" ~ 1, # high confidence = matches 1 high confidence term or >1 term
+      land.term == 1 & land.confid%in%c("low","check") ~ 2),
+    equity = case_when(
+      equity.term == 0 ~ 0,
+      equity.term > 1 ~ 1,
+      equity.term == 1 & equity.confid == "high" ~ 1, # high confidence = matches 1 high confidence term or >1 term
+      equity.term == 1 & equity.confid%in%c("low","check") ~ 2),
+    cadc=case_when(
+      marine == 1 & sustainability == 1 | marine == 1 & land == 1~ 1,
+      marine == 1 & sustainability == 2 | marine == 2 & sustainability == 1 ~ 2,
+      TRUE ~ 0))
+         
+         
 export(iati.coastal2,here("data","data_check","iati_coastal_check.csv"))
 
 #check results
