@@ -9,7 +9,7 @@ source(here("analyses","001_Coastal_countries.R"))
 
 # coastal countries shapefile
 # Get the country boundaries data - sf dataframe
-countries <- ne_countries(returnclass = "sf",scale = 10) # 258 countries and territories
+countries <- rnaturalearth::ne_countries(returnclass = "sf",scale = 10) # 258 countries and territories
 
 # filter by coastal countries
 countries.shp.coastal <- countries %>%
@@ -25,21 +25,21 @@ countries %>%
 #               Population               #
 ##########################################
 
-pop.world.nc <- rast(here("data","raw-data","Word Population count  SEDAC 5km","gpw-v4-population-count-adjusted-to-2015-unwpp-country-totals-rev11_totpop_2pt5_min_nc","gpw_v4_population_count_adjusted_rev11_2pt5_min.nc"))
+pop.world.nc <- terra::rast(here::here("data","raw-data","Word Population count  SEDAC 5km","gpw-v4-population-count-adjusted-to-2015-unwpp-country-totals-rev11_totpop_2pt5_min_nc","gpw_v4_population_count_adjusted_rev11_2pt5_m.nc"))
 
 # the 4th raster is the count population for 2015: 4	Population Count, v4.11 (2015) (see doc)
 pop.world <- pop.world.nc[[4]] 
 # plot(pop.world)
 
 # mollweide projection
-pop.world.proj <- project(pop.world,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+pop.world.proj <- terra::project(pop.world,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 # plot(pop.world.proj)
 
 ##########################################
 #               Biodiversity             #
 ##########################################
 
-specie.grav <- rast(here("data","derived-data","Spatial rasters","sp.count.rast.ter.grav.tif"))
+specie.grav <- terra::rast(here("data","derived-data","Spatial rasters","sp.count.rast.ter.grav.tif"))
 plot(specie.grav)
 
 # project to mollweide
