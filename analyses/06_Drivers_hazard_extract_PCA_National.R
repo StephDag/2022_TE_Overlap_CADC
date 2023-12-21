@@ -25,7 +25,7 @@ countries %>%
 #               Population               #
 ##########################################
 
-pop.world.nc <- terra::rast(here::here("data","raw-data","Word Population count  SEDAC 5km","gpw-v4-population-count-adjusted-to-2015-unwpp-country-totals-rev11_totpop_2pt5_min_nc","gpw_v4_population_count_adjusted_rev11_2pt5_m.nc"))
+pop.world.nc <- terra::rast(here::here("data","raw-data","Word Population count SEDAC 5km","gpw-v4-population-count-adjusted-to-2015-unwpp-country-totals-rev11_totpop_2pt5_min_nc","gpw_v4_population_count_adjusted_rev11_2pt5_m.nc"))
 
 # the 4th raster is the count population for 2015: 4	Population Count, v4.11 (2015) (see doc)
 pop.world <- pop.world.nc[[4]] 
@@ -54,16 +54,25 @@ plot(specie.grav.resample)
 ##########################################
 
 ###### WARNING - crop the population with species grav coastal raster does not work - 
+# it's because the bounding boxes don't match. Need to crop the rasters so that
+# they have the same ones. The one you crop with needs to be smaller than the 
+# one to be cropped.
+# ha wait, could be resolution issue rather than an extent one. In which case 
+# there's some smoothing that can be done, and then remove NAs.
+# 
+
+
+
 
 # crop to species gravity/coastal 
-#pop.world.proj.coastal <- crop(pop.world.proj, specie.grav.proj,mask=T)
-#plot(pop.world.proj.coastal)
+pop.world.proj.coastal <- terra::crop(pop.world.proj, specie.grav.proj,mask=T)
+plot(pop.world.proj.coastal)
 
 ##########################################
 #      Population change                 #
 ##########################################
 
-pop.world.nc.change <- rast(here("data","raw-data","IPCC_Population","CMIP6 - Population density Change persons_km__2 - Near Term (2021-2040) SSP2 (rel. to 1995-2014) - Annual .tiff"))
+pop.world.nc.change <- terra::rast(here("data","raw-data","IPCC_Population","CMIP6 - Population density Change persons_km__2 - Near Term (2021-2040) SSP2 (rel. to 1995-2014) - Annual .tiff"))
 
 # mollweide
 pop.world.change.proj <- project(pop.world.nc.change,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
@@ -86,7 +95,7 @@ crs(specie.grav.proj) == crs(pop.world.change.proj.resample)
 #             Poverty                    #
 ##########################################
 
-depriv <- rast(here("data","raw-data","povmap-grdi-v1-geotiff","povmap-grdi-v1.tif"))
+depriv <- terra::rast(here("data","raw-data","povmap-grdi-v1-geotiff","povmap-grdi-v1.tif"))
 plot(depriv$`povmap-grdi-v1`)
 
 depriv.proj <- project(depriv,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
@@ -115,8 +124,11 @@ enabling_CM <- read.csv(here("data","raw-data","Cisneiros Montemayor 2021","Enab
 #Scale
 range01 <- function(x){(x-min(x,na.rm=T))/(max(x,na.rm=T)-min(x,na.rm=T))} # Function MinMax 
 
-fsi <- readRDS(here("data","raw-data","Global_fsi_ineq.rds"))  %>%
-  mutate(ineq.drv = normalize(as.numeric(gender_inequality_index_2021,na.rm=T)))
+fsi <- terra::readRDS(here::here("data","raw-data","Global_fsi_ineq.rds"))  %>%
+  mutate(ineq.drv = gender_inequality_index_2021 %>%
+           as.factor() %>% as.numeric() %>%
+           BBmisc::normalize())  
+         
 
 fsi.sf <- countries  %>%
   left_join(fsi,by=c("name_en" = "country"))
@@ -253,36 +265,36 @@ risk.stack <- c(#pop.world.proj, # human population in 2015
 #   species.grav,species.grav.proj,species.grav.resample,
 #   depriv,depriv.proj,depriv.proj.resample)
 
-#saveRDS(risk.stack,here("data","derived-data","risk.stack.rds"))
-#risk.stack <- readRDS(here("data","derived-data","risk.stack.rds"))
-
+# #saveRDS(risk.stack,here("data","derived-data","risk.stack.rds"))
+# risk.stack <- readRDS(here::here("data","derived-data","risk.stack.rds"))
+# 
 # sample
-sr <- terra::spatSample(risk.stack, 10000000,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
+sr <- terra::spatSample(risk.stack, 100,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
 dim(sr) #332583      6
+# 
+#   # rename variables
+# names(sr) <- c("mean.count.grav.V2.log","povmap.grdi.v1",
+#                "Nutritional.dependence","Economic.dependence","ND_gain_NA.sf.proj.2015","gender.ineq")
+# #saveRDS(sr,here("data","derived-data","risk.stack.sr.rds"))
+# sr <- readRDS(here("data","derived-data","risk.stack.sr.rds"))
 
-  # rename variables
-names(sr) <- c("mean.count.grav.V2.log","povmap.grdi.v1",
-               "Nutritional.dependence","Economic.dependence","ND_gain_NA.sf.proj.2015","gender.ineq")
-#saveRDS(sr,here("data","derived-data","risk.stack.sr.rds"))
-#sr <- readRDS(here("data","derived-data","risk.stack.sr.rds"))
-
-# recreate scale dataframe
-#sr$population.sc <- normalize(sr$population)
-#sr$population.change.sc <- normalize(sr$population.change)
-sr$mean.count.grav.V2.log.sc <- normalize(sr$mean.count.grav.V2.log)
-sr$povmap.grdi.v1.sc <- normalize(sr$povmap.grdi.v1)
-#sr$terrest.temp.change.sc <- normalize(sr$terrest.temp.change)
-sr$Nutritional.dependence.sc <- normalize(sr$Nutritional.dependence)
-sr$Economic.dependence.sc <- normalize(sr$Economic.dependence)
-sr$ND_gain_NA.sf.proj.2015.sc <- normalize(sr$ND_gain_NA.sf.proj.2015)
-sr$gender.ineq %>% range()
-
+# # recreate scale dataframe
+# #sr$population.sc <- normalize(sr$population)
+# #sr$population.change.sc <- normalize(sr$population.change)
+# sr$mean.count.grav.V2.log.sc <- normalize(sr$mean.count.grav.V2.log)
+# sr$povmap.grdi.v1.sc <- normalize(sr$povmap.grdi.v1)
+# #sr$terrest.temp.change.sc <- normalize(sr$terrest.temp.change)
+# sr$Nutritional.dependence.sc <- normalize(sr$Nutritional.dependence)
+# sr$Economic.dependence.sc <- normalize(sr$Economic.dependence)
+# sr$ND_gain_NA.sf.proj.2015.sc <- normalize(sr$ND_gain_NA.sf.proj.2015)
+# sr$gender.ineq %>% range()
+# 
 # spatvector to sp
 sr.sp <- as(sr, "Spatial")
 names(sr.sp)
 
 # add country information
-world.2 <- countries %>% 
+world.2 <- countries %>%
   st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 
   # sr to sf
@@ -290,14 +302,14 @@ sr.sp.sf = st_as_sf(sr.sp)
 crs(sr.sp.sf) == crs(world.2)
 
 # intersecting points with country
-sr.sp.sf.ctry <- st_intersection(sr.sp.sf, world.2) # 
+sr.sp.sf.ctry <- st_intersection(sr.sp.sf, world.2) #
 dim(sr.sp.sf.ctry)  # 332583      6
 head(sr.sp.sf.ctry)
 
 # number of countries sampled
 unique(sr.sp.sf.ctry$name_en) %>% length()
 
-# create composite risk score
+# create composite risk score ##### INDICE COMPOSITE
 risk.mat <- as.data.frame(sr.sp.sf.ctry) %>%
   select(ND_gain_NA.sf.proj.2015.sc,mean.count.grav.V2.log.sc,povmap.grdi.v1.sc,
          Nutritional.dependence.sc,Economic.dependence.sc,gender.ineq)
@@ -310,39 +322,40 @@ risk.mat.geom  <-  as.data.frame(sr.sp.sf.ctry) %>%
 sr.sp.sf.ctry$risk.mat.score.geom <- risk.mat.geom$risk.mat.score.geom
 sr.sp.sf.ctry
 
-saveRDS(sr.sp.sf.ctry,here("data","derived-data","risk.stack.sr.rds"))
+# saveRDS(sr.sp.sf.ctry,here("data","derived-data","risk.stack.sr.rds"))
 
 #################################
 # for supplemental, spatial PCA #
 #################################
+sr <- readRDS(here("data","derived-data","risk.stack.sr.rds"))
 
   # for spatial PCA
 # randomly select 5000 rows
-#sample.2000 <- sample(seq(1,dim(sr.sp)[1],1),2000)
-#sr.sp.2000 <- sr.sp[sample.2000,c(5:10)]
+sample.2000 <- sample(seq(1,dim(sr.sp)[1],1),2000)
+sr.sp.2000 <- sr.sp[sample.2000,c(5:10)]
 
-#sr.sp.2000.sf = st_as_sf(sr.sp.2000)
-#crs(sr.sp.2000.sf) == crs(world.2)
+sr.sp.2000.sf = st_as_sf(sr.sp.2000)
+crs(sr.sp.2000.sf) == crs(world.2)
 
 # intersecting points with country
-#sr.sp.2000.sf.ctry <- st_intersection(sr.sp.2000.sf, world.2) # 
-#dim(sr.sp.2000.sf.ctry) # 1986 175
+sr.sp.2000.sf.ctry <- st_intersection(sr.sp.2000.sf, world.2)
+dim(sr.sp.2000.sf.ctry) # 1986 175
 
-#sr.sp.2000.sf.ctry.pca <- sr.sp.2000.sf.ctry[,c(1:6,53,118)]
-#head(sr.sp.2000.sf.ctry.pca)
-#dim(sr.sp.2000.sf.ctry.pca)
+sr.sp.2000.sf.ctry.pca <- sr.sp.2000.sf.ctry[,c(1:6,53,118)]
+head(sr.sp.2000.sf.ctry.pca)
+dim(sr.sp.2000.sf.ctry.pca)
 
 # row to keep in original
-#row2keep <- which(rownames(sr.sp.2000@data) %in% rownames(sr.sp.2000.sf.ctry.pca))
+row2keep <- which(rownames(sr.sp.2000@data) %in% rownames(sr.sp.2000.sf.ctry.pca))
 
 # new spatial points df
-#sr.sp.2000.ctry <- sr.sp.2000[row2keep,]
-#sr.sp.2000.ctry <- cbind(sr.sp.2000.ctry,sr.sp.2000.sf.ctry.pca[,c("iso_a3","name_en")] %>% st_drop_geometry())
+sr.sp.2000.ctry <- sr.sp.2000[row2keep,]
+sr.sp.2000.ctry <- cbind(sr.sp.2000.ctry,sr.sp.2000.sf.ctry.pca[,c("iso_a3","name_en")] %>% st_drop_geometry())
 
 # pca 
 
 # bandwith
-bw.gw.pca <- bw.gwpca(sr.sp.2000.ctry[,1:6], 
+bw.gw.pca <- GWmodel::bw.gwpca(sr.sp.2000.ctry[,1:6], 
                       vars = names(sr.sp.2000.ctry[,1:7]),
                       k = 3,
                       robust = FALSE,
