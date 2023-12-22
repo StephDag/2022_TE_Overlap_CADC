@@ -49,6 +49,8 @@ specie.grav.proj <- project(specie.grav,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellp
 specie.grav.resample <- resample(specie.grav, pop.world.proj, method="bilinear")
 plot(specie.grav.resample)
 
+
+
 ##########################################
 #      Coastal Population Crop           #
 ##########################################
@@ -60,13 +62,26 @@ plot(specie.grav.resample)
 # ha wait, could be resolution issue rather than an extent one. In which case 
 # there's some smoothing that can be done, and then remove NAs.
 # 
+a <- terra::ext(pop.world.proj)
+b <- terra::ext(specie.grav.resample)
+ab <- terra::align(a, b)
 
-
+sp.grav.align <- terra::align(pop.world.proj, specie.grav.resample)
 
 
 # crop to species gravity/coastal 
 pop.world.proj.coastal <- terra::crop(pop.world.proj, specie.grav.proj,mask=T)
 plot(pop.world.proj.coastal)
+
+b <- st_bbox(c( xmin=12526606.1201584, xmax=12536049.6097869, ymin=861334.308110896, ymax=877073.45749172 ), crs = 4326) # tiny
+b <- st_bbox(c( xmin=12316459.933445, xmax=12746074.363527, ymin=752585.026158808, ymax=1182199.45624078), crs = 4326)
+
+pop_w_crop <- terra::crop(pop.world.proj, b)
+plot(pop_w_crop)
+specie_crop <- terra::crop(specie.grav.resample, b)
+plot(specie_crop)
+
+# donc il y a bien un décalage et c'est pour ça que ça ne colle pas.
 
 ##########################################
 #      Population change                 #

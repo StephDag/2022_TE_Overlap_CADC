@@ -20,9 +20,9 @@
 #lapply(x, install.packages, character.only = TRUE)
 
 # for packages not on CRAN :
-remotes::install_github("frbcesab/rutils")
-remotes::install_github("wmgeolab/rgeoboundaries")
-remotes::install_github("ropensci/rnaturalearthhires")
+# remotes::install_github("frbcesab/rutils")
+# remotes::install_github("wmgeolab/rgeoboundaries")
+# remotes::install_github("ropensci/rnaturalearthhires")
 
 
 x <- c("here","dplyr","janitor","tidytext","strex","readxl","ggpubr","scico","ggrepel",
