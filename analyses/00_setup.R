@@ -28,12 +28,17 @@
 x <- c("here","dplyr","janitor","tidytext","strex","readxl","ggpubr","scico","ggrepel",
        "rnaturalearth","rnaturalearthdata","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",
        "wordcloud","RColorBrewer","wordcloud2","tm","data.table","rutils",
-       "foreach","doParallel","doSNOW",
+       "foreach","doParallel","doSNOW","htmltools",
        # "tcltk",
        "svMisc","elevatr",
        "dbscan","rgeoboundaries","ncdf4","RANN","mapview","sf","stars",
        "pdftools","tidyverse",
        "factoextra","vegan","GWmodel","ggrepel")
+
+y <- x[!(x %in% installed.packages())]
+
+if (length(y)>0) lapply(y, install.packages, character.only = TRUE)
+
 
 lapply(x, library, character.only = TRUE)
 

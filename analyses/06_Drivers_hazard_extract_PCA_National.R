@@ -20,7 +20,7 @@ dim(countries.shp.coastal)
 # check with small countries are present
 countries %>%
   filter(name_en == "American Samoa")
-
+ 
 ##########################################
 #               Population               #
 ##########################################
@@ -44,6 +44,7 @@ plot(specie.grav)
 
 # project to mollweide
 specie.grav.proj <- project(specie.grav,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+plot(specie.grav.proj)
 
 # resample species grav to match population raster
 specie.grav.resample <- resample(specie.grav, pop.world.proj, method="bilinear")
@@ -55,46 +56,36 @@ plot(specie.grav.resample)
 #      Coastal Population Crop           #
 ##########################################
 
-###### WARNING - crop the population with species grav coastal raster does not work - 
-# it's because the bounding boxes don't match. Need to crop the rasters so that
-# they have the same ones. The one you crop with needs to be smaller than the 
-# one to be cropped.
-# ha wait, could be resolution issue rather than an extent one. In which case 
-# there's some smoothing that can be done, and then remove NAs.
-# 
-a <- terra::ext(pop.world.proj)
-b <- terra::ext(specie.grav.resample)
-ab <- terra::align(a, b)
-
-sp.grav.align <- terra::align(pop.world.proj, specie.grav.resample)
+# stephs original script:
+# crop to species gravity/coastal
+pop.world.proj.coastal <- crop(pop.world.proj, specie.grav.proj,mask=T)
+plot(pop.world.proj.coastal)
+### end
+# OK so cropping by the projected raster doesn't work
 
 
-# crop to species gravity/coastal 
-pop.world.proj.coastal <- terra::crop(pop.world.proj, specie.grav.proj,mask=T)
+specie.grav.proj %>% res
+specie.grav.resample %>% res
+pop.world.proj %>% res
+
+# this now works
+pop.world.proj.coastal <- crop(pop.world.proj, specie.grav.resample,mask=T)
 plot(pop.world.proj.coastal)
 
-b <- st_bbox(c( xmin=12526606.1201584, xmax=12536049.6097869, ymin=861334.308110896, ymax=877073.45749172 ), crs = 4326) # tiny
-b <- st_bbox(c( xmin=12316459.933445, xmax=12746074.363527, ymin=752585.026158808, ymax=1182199.45624078), crs = 4326)
-
-pop_w_crop <- terra::crop(pop.world.proj, b)
-plot(pop_w_crop)
-specie_crop <- terra::crop(specie.grav.resample, b)
-plot(specie_crop)
-
-# donc il y a bien un décalage et c'est pour ça que ça ne colle pas.
 
 ##########################################
 #      Population change                 #
 ##########################################
 
 pop.world.nc.change <- terra::rast(here("data","raw-data","IPCC_Population","CMIP6 - Population density Change persons_km__2 - Near Term (2021-2040) SSP2 (rel. to 1995-2014) - Annual .tiff"))
+plot(pop.world.nc.change)
 
 # mollweide
 pop.world.change.proj <- project(pop.world.nc.change,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-# plot(pop.world.proj)
+# plot(pop.world.change.proj)
 
-# crop to coastal
-#pop.world.change.proj.coastal <- terra::crop(pop.world.change.proj,specie.grav.proj,mask=T)
+# crop to coastal -> doesn't work
+pop.world.change.proj.coastal <- terra::crop(pop.world.change.proj,specie.grav.resample,mask=T)
 
 # resample species grav to match population
 pop.world.change.proj.resample <- resample(pop.world.change.proj, pop.world.proj, method="bilinear")
@@ -103,24 +94,37 @@ plot(pop.world.change.proj.resample)
 crs(specie.grav.proj) == crs(pop.world.change.proj.resample)
 
 # crop to species gravity/coastal 
-#pop.world.change.proj.resample.coastal <- crop(pop.world.change.proj.resample, vect(specie.grav.proj),mask=T)
-#plot(pop.world.change.proj.resample.coastal)
+# steph's original script:
+pop.world.change.proj.resample.coastal <- crop(pop.world.change.proj.resample, vect(specie.grav.proj),mask=T)
+# mine:
+pop.world.change.proj.resample.coastal <- crop(pop.world.change.proj.resample, specie.grav.resample,mask=T)
+
+plot(pop.world.change.proj.resample.coastal)
 
 ##########################################
 #             Poverty                    #
 ##########################################
+# 
+# depriv <- terra::rast(here("data","raw-data","povmap-grdi-v1-geotiff","povmap-grdi-v1.tif"))
+# plot(depriv$`povmap-grdi-v1`)
+# 
+# # depriv.proj <- project(depriv,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs") ## takes ~5mins
+# pop.world.depriv.proj <- project(pop.world.depriv, crs(depriv))
+# 
+# # resample species grav to match population raster 
+# depriv.proj.resample <- resample(depriv.proj, pop.world.proj, method="bilinear")
+# plot(depriv.proj.resample)
+# 
+# # crop to species gravity/coastal 
+# depriv.proj.resample.coastal <- crop(depriv.proj.resample, specie.grav.resample,mask=T)
+# plot(depriv.proj.resample.coastal)
+# 
 
-depriv <- terra::rast(here("data","raw-data","povmap-grdi-v1-geotiff","povmap-grdi-v1.tif"))
-plot(depriv$`povmap-grdi-v1`)
+# let's save this raster so we don't have to do this again:
+# terra::writeRaster(depriv.proj.resample.coastal, "data/derived-data/Spatial rasters/depriv.proj.resmple.coastal.tif")
 
-depriv.proj <- project(depriv,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-
-# resample species grav to match population raster
-depriv.proj.resample <- resample(depriv.proj, pop.world.proj, method="bilinear")
-plot(depriv.proj.resample)
-
-# crop to species gravity/coastal 
-#depriv.proj.resample.coastal <- crop(depriv.proj.resample, specie.grav,mask=T)
+# now simply load raster:
+terra::rast("data/derived-data/Spatial rasters/depriv.proj.resmple.coastal.tif")
 
 ###########################################
 #.          Marine dependency             #
@@ -180,37 +184,39 @@ ND_gain_NA.sf.proj.2015 <- rasterize(ND_gain_NA.sf.proj,pop.world.proj, field="X
 plot(ND_gain_NA.sf.proj.2015)
 
 ##################################################
-#.          Relative inequality index            #
+#.          Relative inequality index            # not sure if supposed to run this bit ? Don't think so...
 ##################################################
 
 # relative wealth index
-#ineq.list <- list.files(here("data","raw-data","relative-wealth-index-april-2021"),full.names = T)
-#imp.func <- function (x) {
-#  import(x) %>% 
-#   dplyr::mutate(ctry=substr(basename(x),1,3))
-#}
-#ineq.dat <- lapply(ineq.list,imp.func)
-#rineq <- do.call(rbind.data.frame,ineq.dat) 
+ineq.list <- list.files(here("data","raw-data","relative-wealth-index-april-2021"),full.names = T)
+imp.func <- function (x) {
+ import(x) %>%
+  dplyr::mutate(ctry=substr(basename(x),1,3))
+}
+ineq.dat <- lapply(ineq.list,imp.func)
+rineq <- do.call(rbind.data.frame,ineq.dat)
 
-#convert to spatial object
-#rineq.vector <- vect(rineq, geom=c("longitude", "latitude"),crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-#plot(rineq.vector)
+# convert to spatial object
+rineq.vector <- vect(rineq, geom=c("longitude", "latitude"),crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+plot(rineq.vector)
 
-# transform
-#rineq.vector.proj <- rast(rineq.vector,pop.world.proj)
+# transform ## not sure what was the purpose here ?
+# rineq.vector.proj <- terra::rast(rineq.vector,pop.world.proj)
 
 #crs(rineq.vector)
 # rasterize vector
-#rineq.rast <- terra::rasterize(rineq.vector,pop.world.proj, field="rwi")
+rineq.rast <- terra::rasterize(rineq.vector,pop.world.proj, field="rwi")
+plot(rineq.rast) # this doesn't show anything...
+
 
 #### project
-#rineq.sf <-  st_as_sf(rineq.vector,
-#                      coords=c("longitude","latitude"), 
-#                      crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs", agr = NA_agr_, remove = FALSE)
+rineq.sf <-  st_as_sf(rineq.vector,
+                     coords=c("longitude","latitude"),
+                     crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs", agr = NA_agr_, remove = FALSE)
 
 # rasterize
-#rineq.sf.raster <-st_rasterize(rineq.sf %>% dplyr::select(rwi, geometry))
-#class(rineq.sf.raster)
+rineq.sf.raster <-st_rasterize(rineq.sf %>% dplyr::select(rwi, geometry))
+class(rineq.sf.raster)
 
 #rineq.sf.raster.2 <- terra::rasterize(rineq.sf,pop.world.proj,filed= "rwi",fun="mean")
 #plot(rineq.sf.raster.2)
@@ -247,13 +253,13 @@ marine.dep.nutri <- rasterize(countries.data.sf.proj.vt,pop.world.proj, field="N
 
 
 # crop to species gravity/coastal  - it works to crop a spatraster with coastal raster
-marine.dep.nutri.coastal <- crop(marine.dep.nutri, specie.grav,mask=T)
+marine.dep.nutri.coastal <- crop(marine.dep.nutri, specie.grav.resample,mask=T)
 plot(marine.dep.nutri.coastal)
 
 ####### economic
 marine.dep.econ <- rasterize(countries.data.sf.proj.vt,pop.world.proj, field="Economic.dependence")
 # crop to species gravity/coastal 
-marine.dep.econ.coastal <- crop(marine.dep.econ, specie.grav,mask=T)
+marine.dep.econ.coastal <- crop(marine.dep.econ, specie.grav.resample,mask=T)
 plot(marine.dep.econ.coastal)
 
 #############################################
@@ -284,7 +290,7 @@ risk.stack <- c(#pop.world.proj, # human population in 2015
 # risk.stack <- readRDS(here::here("data","derived-data","risk.stack.rds"))
 # 
 # sample
-sr <- terra::spatSample(risk.stack, 100,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
+sr <- terra::spatSample(risk.stack, 1000,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
 dim(sr) #332583      6
 # 
 #   # rename variables
