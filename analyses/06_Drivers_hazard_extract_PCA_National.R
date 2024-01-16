@@ -40,15 +40,15 @@ pop.world.proj <- terra::project(pop.world,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +e
 ##########################################
 
 specie.grav <- terra::rast(here("data","derived-data","Spatial rasters","sp.count.rast.ter.grav.tif"))
-plot(specie.grav)
+# plot(specie.grav)
 
 # project to mollweide
 specie.grav.proj <- project(specie.grav,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-plot(specie.grav.proj)
+# plot(specie.grav.proj)
 
 # resample species grav to match population raster
 specie.grav.resample <- resample(specie.grav, pop.world.proj, method="bilinear")
-plot(specie.grav.resample)
+# plot(specie.grav.resample)
 
 
 
@@ -59,7 +59,7 @@ plot(specie.grav.resample)
 # stephs original script:
 # crop to species gravity/coastal
 pop.world.proj.coastal <- crop(pop.world.proj, specie.grav.proj,mask=T)
-plot(pop.world.proj.coastal)
+# plot(pop.world.proj.coastal)
 ### end
 # OK so cropping by the projected raster doesn't work
 
@@ -70,7 +70,7 @@ pop.world.proj %>% res
 
 # this now works
 pop.world.proj.coastal <- crop(pop.world.proj, specie.grav.resample,mask=T)
-plot(pop.world.proj.coastal)
+# plot(pop.world.proj.coastal)
 
 
 ##########################################
@@ -78,7 +78,7 @@ plot(pop.world.proj.coastal)
 ##########################################
 
 pop.world.nc.change <- terra::rast(here("data","raw-data","IPCC_Population","CMIP6 - Population density Change persons_km__2 - Near Term (2021-2040) SSP2 (rel. to 1995-2014) - Annual .tiff"))
-plot(pop.world.nc.change)
+# plot(pop.world.nc.change)
 
 # mollweide
 pop.world.change.proj <- project(pop.world.nc.change,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
@@ -89,7 +89,7 @@ pop.world.change.proj.coastal <- terra::crop(pop.world.change.proj,specie.grav.r
 
 # resample species grav to match population
 pop.world.change.proj.resample <- resample(pop.world.change.proj, pop.world.proj, method="bilinear")
-plot(pop.world.change.proj.resample)
+# plot(pop.world.change.proj.resample)
 
 crs(specie.grav.proj) == crs(pop.world.change.proj.resample)
 
@@ -99,22 +99,21 @@ pop.world.change.proj.resample.coastal <- crop(pop.world.change.proj.resample, v
 # mine:
 pop.world.change.proj.resample.coastal <- crop(pop.world.change.proj.resample, specie.grav.resample,mask=T)
 
-plot(pop.world.change.proj.resample.coastal)
+# plot(pop.world.change.proj.resample.coastal)
 
 ##########################################
 #             Poverty                    #
 ##########################################
-# 
-# depriv <- terra::rast(here("data","raw-data","povmap-grdi-v1-geotiff","povmap-grdi-v1.tif"))
-# plot(depriv$`povmap-grdi-v1`)
-# 
-# # depriv.proj <- project(depriv,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs") ## takes ~5mins
-# pop.world.depriv.proj <- project(pop.world.depriv, crs(depriv))
-# 
-# # resample species grav to match population raster 
-# depriv.proj.resample <- resample(depriv.proj, pop.world.proj, method="bilinear")
-# plot(depriv.proj.resample)
-# 
+
+depriv <- terra::rast(here("data","raw-data","povmap-grdi-v1-geotiff","povmap-grdi-v1.tif"))
+plot(depriv$`povmap-grdi-v1`)
+
+# depriv.proj <- project(depriv,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs") ## takes ~5mins
+plot(depriv.proj)
+# resample species grav to match population raster
+depriv.proj.resample <- resample(depriv.proj, pop.world.proj, method="bilinear")
+plot(depriv.proj.resample)
+
 # # crop to species gravity/coastal 
 # depriv.proj.resample.coastal <- crop(depriv.proj.resample, specie.grav.resample,mask=T)
 # plot(depriv.proj.resample.coastal)
@@ -124,7 +123,7 @@ plot(pop.world.change.proj.resample.coastal)
 # terra::writeRaster(depriv.proj.resample.coastal, "data/derived-data/Spatial rasters/depriv.proj.resmple.coastal.tif")
 
 # now simply load raster:
-terra::rast("data/derived-data/Spatial rasters/depriv.proj.resmple.coastal.tif")
+depriv.proj.resample.coastal <- terra::rast("data/derived-data/Spatial rasters/depriv.proj.resmple.coastal.tif")
 
 ###########################################
 #.          Marine dependency             #
@@ -160,6 +159,10 @@ crs(fsi.sf.proj) == crs(pop.world.proj)
 fsi.sf.proj.ineq.gender <- rasterize(fsi.sf.proj,pop.world.proj, field="ineq.drv")
 plot(fsi.sf.proj.ineq.gender)
 
+fsi.sf.proj.ineq.gender.coastal <- crop(fsi.sf.proj.ineq.gender, specie.grav.resample, mask=T)
+plot(fsi.sf.proj.ineq.gender.coastal)
+
+
 ##############################################
 #.          Climate vulnerability            #
 ##############################################
@@ -183,46 +186,50 @@ crs(ND_gain_NA.sf.proj) == crs(pop.world.proj)
 ND_gain_NA.sf.proj.2015 <- rasterize(ND_gain_NA.sf.proj,pop.world.proj, field="X2015")
 plot(ND_gain_NA.sf.proj.2015)
 
+ND_gain_coastal <- crop(ND_gain_NA.sf.proj.2015, specie.grav.resample, mask=T)
+plot(ND_gain_coastal)
+
+
 ##################################################
 #.          Relative inequality index            # not sure if supposed to run this bit ? Don't think so...
 ##################################################
-
-# relative wealth index
-ineq.list <- list.files(here("data","raw-data","relative-wealth-index-april-2021"),full.names = T)
-imp.func <- function (x) {
- import(x) %>%
-  dplyr::mutate(ctry=substr(basename(x),1,3))
-}
-ineq.dat <- lapply(ineq.list,imp.func)
-rineq <- do.call(rbind.data.frame,ineq.dat)
-
-# convert to spatial object
-rineq.vector <- vect(rineq, geom=c("longitude", "latitude"),crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-plot(rineq.vector)
-
-# transform ## not sure what was the purpose here ?
-# rineq.vector.proj <- terra::rast(rineq.vector,pop.world.proj)
-
-#crs(rineq.vector)
-# rasterize vector
-rineq.rast <- terra::rasterize(rineq.vector,pop.world.proj, field="rwi")
-plot(rineq.rast) # this doesn't show anything...
-
-
-#### project
-rineq.sf <-  st_as_sf(rineq.vector,
-                     coords=c("longitude","latitude"),
-                     crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs", agr = NA_agr_, remove = FALSE)
-
-# rasterize
-rineq.sf.raster <-st_rasterize(rineq.sf %>% dplyr::select(rwi, geometry))
-class(rineq.sf.raster)
-
-#rineq.sf.raster.2 <- terra::rasterize(rineq.sf,pop.world.proj,filed= "rwi",fun="mean")
-#plot(rineq.sf.raster.2)
-
-#rineq.sf.raster.proj <- st_transform(rineq.sf.raster,crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-#crs(rineq.sf.raster.proj) == crs(pop.world.proj)
+# 
+# # relative wealth index
+# ineq.list <- list.files(here("data","raw-data","relative-wealth-index-april-2021"),full.names = T)
+# imp.func <- function (x) {
+#  import(x) %>%
+#   dplyr::mutate(ctry=substr(basename(x),1,3))
+# }
+# ineq.dat <- lapply(ineq.list,imp.func)
+# rineq <- do.call(rbind.data.frame,ineq.dat)
+# 
+# # convert to spatial object
+# rineq.vector <- vect(rineq, geom=c("longitude", "latitude"),crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+# plot(rineq.vector)
+# 
+# # transform ## not sure what was the purpose here ?
+# # rineq.vector.proj <- terra::rast(rineq.vector,pop.world.proj)
+# 
+# #crs(rineq.vector)
+# # rasterize vector
+# rineq.rast <- terra::rasterize(rineq.vector,pop.world.proj, field="rwi")
+# plot(rineq.rast) # this doesn't show anything...
+# 
+# 
+# #### project
+# rineq.sf <-  st_as_sf(rineq.vector,
+#                      coords=c("longitude","latitude"),
+#                      crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs", agr = NA_agr_, remove = FALSE)
+# 
+# # rasterize
+# rineq.sf.raster <-st_rasterize(rineq.sf %>% dplyr::select(rwi, geometry))
+# class(rineq.sf.raster)
+# 
+# #rineq.sf.raster.2 <- terra::rasterize(rineq.sf,pop.world.proj,filed= "rwi",fun="mean")
+# #plot(rineq.sf.raster.2)
+# 
+# #rineq.sf.raster.proj <- st_transform(rineq.sf.raster,crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+# #crs(rineq.sf.raster.proj) == crs(pop.world.proj)
 
 ######################################################################
 #   Create a data.frame for country level information and rasterize  #
@@ -270,12 +277,12 @@ plot(marine.dep.econ.coastal)
 risk.stack <- c(#pop.world.proj, # human population in 2015
                 #pop.world.change.proj.resample, # population change compare to 1994 - 2010
                 specie.grav.resample, # species gravity
-                depriv.proj.resample, #deprivation poverty index 
+                depriv.proj.resample.coastal, #deprivation poverty index 
                # mean.temp.change.resample, # climate terrestrial
-                marine.dep.nutri, # nutrional dependency to marine resources
-                marine.dep.econ,#, # economic dependency to marine resources
-                ND_gain_NA.sf.proj.2015, # national climate NDgain index
-                fsi.sf.proj.ineq.gender)  # gender inequality
+                marine.dep.nutri.coastal, # nutrional dependency to marine resources
+                marine.dep.econ.coastal,#, # economic dependency to marine resources
+                ND_gain_coastal, # national climate NDgain index
+                fsi.sf.proj.ineq.gender.coastal)  # gender inequality
 
 # remove large object to clean memory
 #rm(mean.pH.change,mean.pH.change,mean.pH.change.norm,mean.cc.score.proj,mean.cc.score,
@@ -286,11 +293,13 @@ risk.stack <- c(#pop.world.proj, # human population in 2015
 #   species.grav,species.grav.proj,species.grav.resample,
 #   depriv,depriv.proj,depriv.proj.resample)
 
-# #saveRDS(risk.stack,here("data","derived-data","risk.stack.rds"))
+
+
+saveRDS(risk.stack,"data/derived-data/Spatial rasters/risk.stack.rds")# "data","derived-data","risk.stack.rds"))
 # risk.stack <- readRDS(here::here("data","derived-data","risk.stack.rds"))
 # 
 # sample
-sr <- terra::spatSample(risk.stack, 1000,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
+sr <- terra::spatSample(risk.stack, 100,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
 dim(sr) #332583      6
 # 
 #   # rename variables
