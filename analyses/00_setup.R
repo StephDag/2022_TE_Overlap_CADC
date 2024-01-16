@@ -20,20 +20,25 @@
 #lapply(x, install.packages, character.only = TRUE)
 
 # for packages not on CRAN :
-remotes::install_github("frbcesab/rutils")
-remotes::install_github("wmgeolab/rgeoboundaries")
-remotes::install_github("ropensci/rnaturalearthhires")
+# remotes::install_github("frbcesab/rutils")
+# remotes::install_github("wmgeolab/rgeoboundaries")
+# remotes::install_github("ropensci/rnaturalearthhires")
 
 
 x <- c("here","dplyr","janitor","tidytext","strex","readxl","ggpubr","scico","ggrepel",
        "rnaturalearth","rnaturalearthdata","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",
        "wordcloud","RColorBrewer","wordcloud2","tm","data.table","rutils",
-       "foreach","doParallel","doSNOW",
+       "foreach","doParallel","doSNOW","htmltools",
        # "tcltk",
        "svMisc","elevatr",
        "dbscan","rgeoboundaries","ncdf4","RANN","mapview","sf","stars",
        "pdftools","tidyverse",
        "factoextra","vegan","GWmodel","ggrepel")
+
+y <- x[!(x %in% installed.packages())]
+
+if (length(y)>0) lapply(y, install.packages, character.only = TRUE)
+
 
 lapply(x, library, character.only = TRUE)
 
