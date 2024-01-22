@@ -194,7 +194,6 @@ dim(ctr.fsi.ineq.biodiv.hdi) # 129 countries
   n.region.year.DEV
   ggsave(here("figures","DEVELOPMENT_n.region.year.png"),n.region.year.DEV)
   
-
   ####################
   #     CLIMATE      #
   ####################

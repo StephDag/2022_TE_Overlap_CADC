@@ -1,11 +1,12 @@
 # compute climate hazard composite index 
 ### Stephanie D'Agata, Nov 2023
-### updates: Dec 2023
+### updates: Steph D'Agata & Camille Coux Jan 2024
 ### output: raster stack of climate change variables + composite index
 
 library(here)
 source(here("analyses","00_setup.R"))
 source(here("analyses","001_Coastal_countries.R"))
+source(here("R","NormMinMax.R"))
 
 # coastal countries shapefile
 # Get the country boundaries data - sf dataframe
@@ -25,7 +26,7 @@ countries %>%
 #               Population               #
 ##########################################
 
-pop.world.nc <- terra::rast(here::here("data","raw-data","Word Population count SEDAC 5km","gpw-v4-population-count-adjusted-to-2015-unwpp-country-totals-rev11_totpop_2pt5_min_nc","gpw_v4_population_count_adjusted_rev11_2pt5_m.nc"))
+pop.world.nc <- terra::rast(here::here("data","raw-data","World Population SEDAC 5km","gpw-v4-population-density-adjusted-to-2015-unwpp-country-totals-rev11_totpop_2pt5_min_nc","gpw_v4_population_density_adjusted_rev11_2pt5_min.nc"))
 
 # the 4th raster is the count population for 2015: 4	Population Count, v4.11 (2015) (see doc)
 pop.world <- pop.world.nc[[4]] 
@@ -50,28 +51,20 @@ specie.grav.proj <- project(specie.grav,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellp
 specie.grav.resample <- resample(specie.grav, pop.world.proj, method="bilinear")
 # plot(specie.grav.resample)
 
-
-
 ##########################################
 #      Coastal Population Crop           #
 ##########################################
 
 # stephs original script:
 # crop to species gravity/coastal
-pop.world.proj.coastal <- crop(pop.world.proj, specie.grav.proj,mask=T)
+pop.world.proj.coastal <- crop(pop.world.proj, specie.grav.resample,mask=T)
 # plot(pop.world.proj.coastal)
 ### end
 # OK so cropping by the projected raster doesn't work
 
-
 specie.grav.proj %>% res
 specie.grav.resample %>% res
 pop.world.proj %>% res
-
-# this now works
-pop.world.proj.coastal <- crop(pop.world.proj, specie.grav.resample,mask=T)
-# plot(pop.world.proj.coastal)
-
 
 ##########################################
 #      Population change                 #
@@ -94,11 +87,27 @@ pop.world.change.proj.resample <- resample(pop.world.change.proj, pop.world.proj
 crs(specie.grav.proj) == crs(pop.world.change.proj.resample)
 
 # crop to species gravity/coastal 
-# steph's original script:
-pop.world.change.proj.resample.coastal <- crop(pop.world.change.proj.resample, vect(specie.grav.proj),mask=T)
-# mine:
 pop.world.change.proj.resample.coastal <- crop(pop.world.change.proj.resample, specie.grav.resample,mask=T)
+# plot(pop.world.change.proj.resample.coastal)
 
+##########################################
+#                 SLR                    #
+##########################################
+
+# mean SLR changes - (2021-2040) vs ( 1995 - 2014)
+mean.SLR.change  <- rast(here("data","raw-data","IPCC_Climate","CMIP6 - Sea level rise (SLR) Change meters - Near Term (2021-2040) SSP2-4.5 (rel. to 1995-2014) - Annual .tiff"))
+#plot(mean.SLR.change)
+
+# mollweide
+mean.SLR.change.proj <- project(mean.SLR.change,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+#plot(mean.SLR.change.proj)
+
+# resample mean.SLR.change.proj to match population raster
+mean.SLR.change.proj.resample <- resample(mean.SLR.change.proj, pop.world.proj, method="bilinear")
+plot(mean.SLR.change.proj.resample)
+
+# crop to species gravity/coastal 
+mean.SLR.change.proj.coastal <- crop(mean.SLR.change.proj.resample, specie.grav.resample,mask=T)
 # plot(pop.world.change.proj.resample.coastal)
 
 ##########################################
@@ -108,22 +117,23 @@ pop.world.change.proj.resample.coastal <- crop(pop.world.change.proj.resample, s
 depriv <- terra::rast(here("data","raw-data","povmap-grdi-v1-geotiff","povmap-grdi-v1.tif"))
 plot(depriv$`povmap-grdi-v1`)
 
-# depriv.proj <- project(depriv,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs") ## takes ~5mins
+# projected
+depriv.proj <- project(depriv,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs") ## takes ~5mins
 plot(depriv.proj)
+
 # resample species grav to match population raster
 depriv.proj.resample <- resample(depriv.proj, pop.world.proj, method="bilinear")
 plot(depriv.proj.resample)
 
 # # crop to species gravity/coastal 
-# depriv.proj.resample.coastal <- crop(depriv.proj.resample, specie.grav.resample,mask=T)
-# plot(depriv.proj.resample.coastal)
-# 
+depriv.proj.resample.coastal <- crop(depriv.proj.resample, specie.grav.resample,mask=T)
+plot(depriv.proj.resample.coastal)
 
 # let's save this raster so we don't have to do this again:
-# terra::writeRaster(depriv.proj.resample.coastal, "data/derived-data/Spatial rasters/depriv.proj.resmple.coastal.tif")
+#terra::writeRaster(depriv.proj.resample.coastal, "data/derived-data/Spatial rasters/depriv.proj.resample.coastal.tif")
 
 # now simply load raster:
-depriv.proj.resample.coastal <- terra::rast("data/derived-data/Spatial rasters/depriv.proj.resmple.coastal.tif")
+depriv.proj.resample.coastal <- terra::rast("data/derived-data/Spatial rasters/depriv.proj.resample.coastal.tif")
 
 ###########################################
 #.          Marine dependency             #
@@ -140,12 +150,12 @@ dim(marine.dep)
 enabling_CM <- read.csv(here("data","raw-data","Cisneiros Montemayor 2021","Enabling_conditions_equitable_sustainable_Blue_Economy_-_Cisneros-Montemayor_et_al_2021.csv"))
 
 #Scale
-range01 <- function(x){(x-min(x,na.rm=T))/(max(x,na.rm=T)-min(x,na.rm=T))} # Function MinMax 
+#range01 <- function(x){(x-min(x,na.rm=T))/(max(x,na.rm=T)-min(x,na.rm=T))} # Function MinMax 
 
 fsi <- terra::readRDS(here::here("data","raw-data","Global_fsi_ineq.rds"))  %>%
-  mutate(ineq.drv = gender_inequality_index_2021 %>%
+  dplyr::mutate(ineq.drv = gender_inequality_index_2021 %>%
            as.factor() %>% as.numeric() %>%
-           BBmisc::normalize())  
+           normalize())  
          
 
 fsi.sf <- countries  %>%
@@ -161,7 +171,6 @@ plot(fsi.sf.proj.ineq.gender)
 
 fsi.sf.proj.ineq.gender.coastal <- crop(fsi.sf.proj.ineq.gender, specie.grav.resample, mask=T)
 plot(fsi.sf.proj.ineq.gender.coastal)
-
 
 ##############################################
 #.          Climate vulnerability            #
@@ -188,7 +197,6 @@ plot(ND_gain_NA.sf.proj.2015)
 
 ND_gain_coastal <- crop(ND_gain_NA.sf.proj.2015, specie.grav.resample, mask=T)
 plot(ND_gain_coastal)
-
 
 ##################################################
 #.          Relative inequality index            # not sure if supposed to run this bit ? Don't think so...
@@ -258,7 +266,6 @@ plot(countries.data.sf.proj.vt)
   # rasterize polygon
 marine.dep.nutri <- rasterize(countries.data.sf.proj.vt,pop.world.proj, field="Nutritional.dependence")
 
-
 # crop to species gravity/coastal  - it works to crop a spatraster with coastal raster
 marine.dep.nutri.coastal <- crop(marine.dep.nutri, specie.grav.resample,mask=T)
 plot(marine.dep.nutri.coastal)
@@ -270,7 +277,7 @@ marine.dep.econ.coastal <- crop(marine.dep.econ, specie.grav.resample,mask=T)
 plot(marine.dep.econ.coastal)
 
 #############################################
-#        PCA on all raster                  #
+#        Stack on all raster                #
 #############################################
 
 # create stack raster
@@ -282,62 +289,135 @@ risk.stack <- c(#pop.world.proj, # human population in 2015
                 marine.dep.nutri.coastal, # nutrional dependency to marine resources
                 marine.dep.econ.coastal,#, # economic dependency to marine resources
                 ND_gain_coastal, # national climate NDgain index
+                #mean.SLR.change.proj.coastal, # SLR change
                 fsi.sf.proj.ineq.gender.coastal)  # gender inequality
 
-# remove large object to clean memory
-#rm(mean.pH.change,mean.pH.change,mean.pH.change.norm,mean.cc.score.proj,mean.cc.score,
-#   mean.SLR.change,mean.SLR.change.norm,mean.SST.change,mean.SST.change.norm,mean.SST.change.resample,
-#   pop.world,pop.world.change.proj,pop.world.change.proj.coastal,pop.world.change.proj.resample,
-#   pop.world.change.proj,pop.world.change.proj.coastal,pop.world.change.proj.resample,
-#   pop.world.proj.coastal,pop.world.nc,pop.world.proj,rineq,rineq.sf,
-#   species.grav,species.grav.proj,species.grav.resample,
-#   depriv,depriv.proj,depriv.proj.resample)
-
-
-
-saveRDS(risk.stack,"data/derived-data/Spatial rasters/risk.stack.rds")# "data","derived-data","risk.stack.rds"))
-# risk.stack <- readRDS(here::here("data","derived-data","risk.stack.rds"))
-# 
-# sample
-sr <- terra::spatSample(risk.stack, 100,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
-dim(sr) #332583      6
-# 
 #   # rename variables
-# names(sr) <- c("mean.count.grav.V2.log","povmap.grdi.v1",
-#                "Nutritional.dependence","Economic.dependence","ND_gain_NA.sf.proj.2015","gender.ineq")
-# #saveRDS(sr,here("data","derived-data","risk.stack.sr.rds"))
-# sr <- readRDS(here("data","derived-data","risk.stack.sr.rds"))
+names(risk.stack) <- c("mean.count.grav.V2.log","povmap.grdi.v1",
+                       "Nutritional.dependence","Economic.dependence","ND_gain_NA.sf.proj.2015","SLR.change","gender.ineq")
 
-# # recreate scale dataframe
-# #sr$population.sc <- normalize(sr$population)
-# #sr$population.change.sc <- normalize(sr$population.change)
-# sr$mean.count.grav.V2.log.sc <- normalize(sr$mean.count.grav.V2.log)
-# sr$povmap.grdi.v1.sc <- normalize(sr$povmap.grdi.v1)
-# #sr$terrest.temp.change.sc <- normalize(sr$terrest.temp.change)
-# sr$Nutritional.dependence.sc <- normalize(sr$Nutritional.dependence)
-# sr$Economic.dependence.sc <- normalize(sr$Economic.dependence)
-# sr$ND_gain_NA.sf.proj.2015.sc <- normalize(sr$ND_gain_NA.sf.proj.2015)
-# sr$gender.ineq %>% range()
-# 
-# spatvector to sp
-sr.sp <- as(sr, "Spatial")
-names(sr.sp)
+# save raster 
+#saveRDS(risk.stack,"data/derived-data/Spatial rasters/risk.stack.rds")
+
+# sample
+#sr <- terra::spatSample(risk.stack, 1000,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
+#dim(sr) #332583      6
+# #saveRDS(sr,here("data","derived-data","risk.stack.sr.rds"))
+risk.stack <- readRDS(here::here("data","derived-data","Spatial rasters","risk.stack.rds"))
+
+# recreate scale raster stack
+ risk.stack$mean.count.grav.V2.log.sc <- rescale01(risk.stack$mean.count.grav.V2.log); gc()
+ risk.stack$povmap.grdi.v1.sc <- rescale01(risk.stack$povmap.grdi.v1); gc()
+ risk.stack$Nutritional.dependence.sc <- rescale01(risk.stack$Nutritional.dependence); gc()
+ risk.stack$Economic.dependence.sc <- rescale01(risk.stack$Economic.dependence); gc()
+ risk.stack$ND_gain_NA.sf.proj.2015.sc <- rescale01(risk.stack$ND_gain_NA.sf.proj.2015); gc()
+ #risk.stack$mean.SLR.change.proj.coastal.sc <- rescale01(risk.stack$SLR.change); gc()
+ risk.stack$gender.ineq.sc <- rescale01(risk.stack$gender.ineq); gc()
+
+ saveRDS(file="data/derived-data/Spatial rasters/risk.stack.rds",object=risk.stack)
+
+ # free memory
+ rm(depriv,depriv.proj,depriv.proj.resample,depriv.proj.resample.coastal,pop.world,
+    pop.world.change.proj,pop.world.change.proj.coastal,pop.world.change.proj.resample,
+    pop.world.change.proj.resample.coastal,pop.world.nc,pop.world.nc.change,pop.world.proj,
+    mean.count.grav.V2.log.sc,mean.SLR.change.proj.coastal.sc)
+ 
+# create a stack raster of normalized raster
+ risk.stack.sc <- c(risk.stack$mean.count.grav.V2.log.sc,
+                    risk.stack$povmap.grdi.v1.sc,
+                    risk.stack$Nutritional.dependence.sc,
+                    risk.stack$Economic.dependence.sc,
+                    risk.stack$ND_gain_NA.sf.proj.2015.sc,
+                    #risk.stack$mean.SLR.change.proj.coastal.sc,
+                    risk.stack$gender.ineq.sc); gc()
+ 
+ saveRDS(risk.stack.sc,"data/derived-data/Spatial rasters/risk.stack.sc.rds")
+ 
+ #NAflag(risk.stack.sc$mean.count.grav.V2.log.sc) <- NA # bug
+ r_stack_cor_5 <- focalPairs(risk.stack.sc,w=25, "pearson", na.rm=TRUE)
+ r_stack_cor_5
+ # save raster 
+ gc()
+ saveRDS(risk.stack.sc,"data/derived-data/Spatial rasters/risk.stack.sc.rds")
+ 
+# correlation of normalized data 
+ #cor.ineq.sc <- terra::layerCor(risk.stack.sc, fun="pearson",use="masked.complete")
+
+# species gravity
+species.grav.poverty <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$povmap.grdi.v1.sc), # [MW]
+     use = "na.or.complete")
+species.grav.nutr.dep <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$Nutritional.dependence.sc), # [MW]
+                            use = "na.or.complete"); gc()
+species.grav.econ.dep <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$Economic.dependence.sc), # [MW]
+                             use = "na.or.complete"); gc()
+species.grav.climate <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$ND_gain_NA.sf.proj.2015.sc), # [MW]
+                             use = "na.or.complete"); gc()
+species.grav.slr <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
+                            use = "na.or.complete"); gc()
+species.grav.gender <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$gender.ineq.sc), # [MW]
+                            use = "na.or.complete"); gc()
+#poverty
+poverty.nutr <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$Nutritional.dependence.sc), # [MW]
+                            use = "na.or.complete")
+poverty.econ <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$Economic.dependence.sc), # [MW]
+                    use = "na.or.complete")
+poverty.climate <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$ND_gain_NA.sf.proj.2015.sc), # [MW]
+                    use = "na.or.complete")
+poverty.grav.slr <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
+                        use = "na.or.complete"); gc()
+poverty.gender <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$gender.ineq.sc), # [MW]
+                       use = "na.or.complete")
+#nutritional dependency
+nutr.econ <- cor(values(risk.stack$Nutritional.dependence.sc),values(risk.stack$Economic.dependence.sc), # [MW]
+                    use = "na.or.complete")
+nutr.climate <- cor(values(risk.stack$Nutritional.dependence.sc),values(risk.stack$ND_gain_NA.sf.proj.2015.sc), # [MW]
+                       use = "na.or.complete")
+nutr.slr <- cor(values(risk.stack$Nutritional.dependence.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
+                    use = "na.or.complete")
+nutr.gender <- cor(values(risk.stack$Nutritional.dependence.sc),values(risk.stack$gender.ineq.sc), # [MW]
+                      use = "na.or.complete")
+#econ dependency
+econ.climate <- cor(values(risk.stack$Economic.dependence.sc),values(risk.stack$ND_gain_NA.sf.proj.2015.sc), # [MW]
+                    use = "na.or.complete")
+econ.slr <- cor(values(risk.stack$Economic.dependence.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
+                use = "na.or.complete")
+econ.gender <- cor(values(risk.stack$Economic.dependence.sc),values(risk.stack$gender.ineq.sc), # [MW]
+                   use = "na.or.complete")
+
+# climate
+climate.slr <- cor(values(risk.stack$ND_gain_NA.sf.proj.2015.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
+                    use = "na.or.complete")
+climate.gender <- cor(values(risk.stack$ND_gain_NA.sf.proj.2015.sc),values(risk.stack$gender.ineq.sc), # [MW]
+                   use = "na.or.complete")
+
+# slr
+slr.gender <- cor(values(risk.stack$mean.SLR.change.proj.coastal.sc),values(risk.stack$gender.ineq.sc), # [MW]
+                      use = "na.or.complete")
 
 # add country information
 world.2 <- countries %>%
   st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 
   # sr to sf
-sr.sp.sf = st_as_sf(sr.sp)
-crs(sr.sp.sf) == crs(world.2)
+risk.stack.sp.sf = st_as_sf(risk.stack)
+crs(risk.stack.sp.sf) == crs(world.2)
 
 # intersecting points with country
-sr.sp.sf.ctry <- st_intersection(sr.sp.sf, world.2) #
-dim(sr.sp.sf.ctry)  # 332583      6
-head(sr.sp.sf.ctry)
+# Convert the SpatRaster to a SpatialPointsDataFrame
+#risk.stack_df <- as.data.frame(risk.stack)
+#risk.stack.sp.sf.ctry <- intersect(world.2,risk.stack.sc) #
+#risk.stack.sp.sf.ctry <- st_intersection(risk.stack.sc, world.2) #
+#dim(risk.stack.sp.sf.ctry)  # 332583      6
+#head(risk.stack.sp.sf.ctry)
+
+# Transform raster grid to polygons grid
+z <- terra::as.polygons(risk.stack.sc)
+# Intersect with species
+u <- terra::intersect(z,world.2)
+
 
 # number of countries sampled
-unique(sr.sp.sf.ctry$name_en) %>% length()
+unique(risk.stack.sp.sf.ctry$name_en) %>% length()
 
 # create composite risk score ##### INDICE COMPOSITE
 risk.mat <- as.data.frame(sr.sp.sf.ctry) %>%

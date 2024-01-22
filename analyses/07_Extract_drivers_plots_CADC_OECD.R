@@ -1,4 +1,4 @@
-# outputs: OECD coastal, non GPS file - summarize by country of OECD initiatices and CADC - with drivers, output ready for figures
+# outputs: OECD coastal, non GPS file - summarize by country of OECD initiatives and CADC - with drivers, output ready for figures
 # Stephanie D'Agata
 # Nov 2023
 # Updates
@@ -198,8 +198,6 @@ CADC.OECD.tot.proj.map <- ggplot(data = CADC.OECD.tot.proj) +
 CADC.OECD.tot.proj.map
 ggsave(here("figures","OECD_cum_CADC_2021_ALL.png"),CADC.OECD.tot.proj.map)
 
-
-
 # sum number of projects n.CADC = 1
 CADC.OECD.1 <- CADC.OECD %>%
   filter(n.CADC == 1) %>%
@@ -292,7 +290,6 @@ ggsave(here("figures","OECD_sust_cum_CADC_2021.png"),cum_CADC_2021_all)
 # FSI composite indicators (? add ISO3 country code to fsi dataframe to join with ctry)
 # standardized - min-max
 source(here("R","NormMinMax.R"))
-
 
 #Scale
 fsi <- readRDS(here("data","raw-data","Global_fsi_ineq.rds"))  %>%
