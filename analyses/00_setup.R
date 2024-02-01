@@ -30,7 +30,7 @@ x <- c("here","dplyr","janitor","tidytext","strex","readxl","ggpubr","scico","gg
        "wordcloud","RColorBrewer","wordcloud2","tm","data.table","rutils",
        "foreach","doParallel","doSNOW","htmltools",
        # "tcltk",
-       "svMisc","elevatr",
+       "svMisc","elevatr", "BBmisc",
        "dbscan","rgeoboundaries","ncdf4","RANN","mapview","sf","stars",
        "pdftools","tidyverse",
        "factoextra","vegan","GWmodel","ggrepel")
