@@ -43,7 +43,7 @@ pop.world.proj <- terra::rast( here::here("data", "derived-data", "Spatial raste
 #               Biodiversity             #
 ##########################################
 
-specie.grav <- terra::rast(here("data","derived-data","Spatial rasters","sp.count.rast.ter.grav.tif"))
+specie.grav <- terra::rast(here::here("data","derived-data","Spatial rasters","sp.count.rast.ter.grav.tif"))
 # plot(specie.grav)
 
 # project to mollweide
@@ -321,11 +321,11 @@ merit.coastal <- terra::rast(here::here("data", "derived-data", "Spatial rasters
 
 
 
-pop.world.nc.change <- terra::rast(here("data","raw-data","IPCC_Population","CMIP6 - Population density Change persons_km__2 - Near Term (2021-2040) SSP2 (rel. to 1995-2014) - Annual .tiff"))
+pop.world.nc.change <- terra::rast(here::here("data","raw-data","IPCC_Population","CMIP6 - Population density Change persons_km__2 - Near Term (2021-2040) SSP2 (rel. to 1995-2014) - Annual .tiff"))
 # plot(pop.world.nc.change)
 
 # mollweide
-pop.world.change.proj <- project(pop.world.nc.change,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+pop.world.change.proj <- terra::project(pop.world.nc.change,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 # plot(pop.world.change.proj)
 
 # crop to coastal -> doesn't work
@@ -475,18 +475,18 @@ risk.stack <- readRDS(here::here("data","derived-data","Spatial rasters","risk.s
 # # slr
 # slr.gender <- cor(values(risk.stack$mean.SLR.change.proj.coastal.sc),values(risk.stack$gender.ineq.sc), # [MW]
 #                       use = "na.or.complete")
-# 
-# # add country information
-# world.2 <- countries %>%
-#   st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-# 
-#   # sr to sf
-# risk.stack.sp.sf = st_as_sf(risk.stack)
-# crs(risk.stack.sp.sf) == crs(world.2)
+
+# add country information
+world.2 <- countries.shp.coastal %>%
+  st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+
+  # sr to sf
+risk.stack.sp.sf = st_as_sf(risk.stack)
+crs(risk.stack.sp.sf) == crs(world.2)
 
 # intersecting points with country
 # Convert the SpatRaster to a SpatialPointsDataFrame
-#risk.stack_df <- as.data.frame(risk.stack)     
+#risk.stack_df <- as.data.frame(risk.stack)
 #
 ################# steph pense que c'est ça qu'il faut faire. st_intersection une fois qu'on a mis en spatial data frame. Puis merge avec shapefile du monde world 2. But = récupérer l'info de quel pxel dans quel pays, pour pouvoir calculer l'indice composite, 1 valeur composite par pixel, puis une distribution de valeurs par pays.
 ##################################################################################

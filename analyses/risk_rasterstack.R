@@ -1,48 +1,50 @@
 
 library(magrittr)
-# load spatial rasters:
+# load spatial rasters Camille:
 
 localpath = here::here("data", "derived-data", "Spatial rasters")
+# 
+# rast.names <- list("pop.world.proj.coastal",
+#                "pop.world.change.coastal", 
+#                "specie.grav.resample",
+#                "depriv.proj.resample.coastal",
+#                "marine.dep.nutri.coastal", 
+#                "marine.dep.econ.coastal",
+#                "ND_gain_coastal", 
+#                "fsi.sf.proj.ineq.gender.coastal",  
+#                "merit.coastal")
+# 
+# 
+# risk.stack <- lapply(rast.names, function(x){
+#   sp.rast <- paste0(localpath, "/", x, ".tif")
+#   r1 <- terra::rast(sp.rast)
+#   names(r1) <- paste(x)
+#   return(r1)
+# }) %>%
+#   do.call(c, .)
+# 
+# # scale all raster layers
+# risk.stack.sc <- lapply(rast.names, function(x){
+#   sp.rast <- paste0(localpath, "/", x, ".tif")
+#   r1 <- terra::rast(sp.rast)
+#   r1 <- scale(r1)
+#   names(r1) <- paste(x, ".sc")
+#   return(r1)
+# }) %>%
+#   do.call(c, .)
+# 
+# # save to NetCDF
+# terra::writeCDF(risk.stack, paste0(localpath, "/risk.stack.nc"), overwrite=TRUE)
+# terra::writeCDF(risk.stack.sc, paste0(localpath, "/risk.stack.sc.nc"), overwrite=TRUE)
 
-rast.names <- list("pop.world.proj.coastal",
-               "pop.world.change.coastal", 
-               "specie.grav.resample",
-               "depriv.proj.resample.coastal",
-               "marine.dep.nutri.coastal", 
-               "marine.dep.econ.coastal",
-               "ND_gain_coastal", 
-               "fsi.sf.proj.ineq.gender.coastal",  
-               "merit.coastal")
 
-
-risk.stack <- lapply(rast.names, function(x){
-  sp.rast <- paste0(localpath, "/", x, ".tif")
-  r1 <- terra::rast(sp.rast)
-  names(r1) <- paste(x)
-  return(r1)
-}) %>%
-  do.call(c, .)
-
-# scale all raster layers
-risk.stack.sc <- lapply(rast.names, function(x){
-  sp.rast <- paste0(localpath, "/", x, ".tif")
-  r1 <- terra::rast(sp.rast)
-  r1 <- scale(r1)
-  names(r1) <- paste(x, ".sc")
-  return(r1)
-}) %>%
-  do.call(c, .)
-
-# save to NetCDF
-terra::writeCDF(risk.stack, paste0(localpath, "/risk.stack.nc"), overwrite=TRUE)
-terra::writeCDF(risk.stack.sc, paste0(localpath, "/risk.stack.sc.nc"), overwrite=TRUE)
-
-risk.stack.sc <- terra::rast(paste0(localpath, "/risk.stack.sc.nc"))
-names(risk.stack.sc) <- rast.names
-
+# updated risk.stack from Steph:
+risk.stack.sc <- terra::rast(here::here("data/derived-data/Spatial rasters/risk.stack_sc_steph.tif" ))
+rast.names <- names(risk.stack.sc )
 # # correlation of normalized data (à faire après)
 
 risk.vals <- terra::values(risk.stack.sc)
+risk.stack_df <- as.data.frame(risk.stack.sc)     
 risk.vals.nona <- na.omit(risk.vals)
 colnames(risk.vals) <- rast.names
 
@@ -62,31 +64,63 @@ risk.stack.sp.sf = sf::st_as_sf(risk.stack)
 crs(risk.stack.sp.sf) == crs(world.2)
 
 
-essai <- risk.stack.sc %>% terra::subset(., 1)
+essai <- risk.stack.steph %>% terra::subset(., 1)
+nas <- is.na(essai$mean.count.grav.V2.log)
+miaou <- which(nas$mean.count.grav.V2.log==TRUE)
+
+
+which(is.na(essai$mean.count.grav.V2.log[1:100]))
+      
+      
 essai2 <- terra::extract(essai, points, xy=TRUE)
-essai2 <- terra::crds(essai, na.rm=TRUE)
+essai2 <- terra::crds(essai)
+essai2$index <- 1:nrow(essai2)
+essai2 <- which()
+
 essai2 <- terra::crds(risk.stack.sc, na.rm=TRUE, na.all=TRUE)
 
 
 # intersecting points with country
-# Convert the SpatRaster to a SpatialPointsDataFrame
-risk.stack_df <- as.data.frame(risk.stack)
+# Convert the SpatRaster to a SpatialPointsDataFrame essaye de paralléliser 
+risk.stack.df <- as.data.frame(risk.stack)
+risk.stack.df <- read.csv2(here::here("data/derived-data/Spatial rasters/xy_risk_stack.csv"))[,-1]
+head(risk.stack.df)
 
 
-################# steph pense que c'est ça qu'il faut faire. st_intersection une fois qu'on a mis en spatial data frame. Puis merge avec shapefile du monde world 2. But = récupérer l'info de quel pxel dans quel pays, pour pouvoir calculer l'indice composite, 1 valeur composite par pixel, puis une distribution de valeurs par pays.
-##################################################################################
-##################################################################################
-##################################################################################
+################# steph pense que c'est ça qu'il faut faire. st_intersection une fois qu'on a mis en spatial data frame. Puis merge avec shapefile du monde world 2. But = récupérer l'info de quel pxel dans quel pays, pour pouvoir calculer l'indice composite, 1 valeur composite par pixel, puis une distribution de valeurs par pays. On n' a pas besoin d'avoir l'info spatiale pendant qu'on calcule les indices. On n'a pas besoin de stack.
+# Then do the pca as planned. To have an idea of the relationship between variables. And have different colors per country.
 #
+##################################################################################
+##################################################################################
+##################################################################################
+
+
 #risk.stack.sp.sf.ctry <- intersect(world.2,risk.stack.sc) #
 #risk.stack.sp.sf.ctry <- st_intersection(risk.stack.sc, world.2) #
 #dim(risk.stack.sp.sf.ctry)  # 332583      6
 #head(risk.stack.sp.sf.ctry)
 
-# Transform raster grid to polygons grid
-z <- terra::as.polygons(risk.stack.sc)
-# Intersect with species
-u <- terra::intersect(z,world.2)
+# essai avec le risk stack de steph
+
+risk.stack.steph <- terra::rast(here::here("data/derived-data/Spatial rasters/risk.stack_sc_steph.tif"))
+
+# extract coordinates from non-na cells:
+rs_xy <- terra::crds(risk.stack.steph, na.rm=TRUE, na.all=TRUE) %>% 
+  as.data.frame()
+# turn into a sf 
+rs_sf <- sf::st_as_sf(rs_xy, coords = c("x", "y"), crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+# intersect:
+essai <- sf::st_intersection(rs_sf[1:5000,], world.2)
+
+
+#### WE ARE HERE      #############################################
+
+world.2$name %>% unique
+#risk.stack.sp.sf.ctry <- intersect(world.2,risk.stack.steph) #
+#risk.stack.sp.sf.ctry <- st_intersection(risk.stack.steph, world.2) #
+#dim(risk.stack.sp.sf.ctry)  # 332583      6
+#head(risk.stack.sp.sf.ctry)
+
 
 
 # number of countries sampled
@@ -106,5 +140,4 @@ sr.sp.sf.ctry$risk.mat.score.geom <- risk.mat.geom$risk.mat.score.geom
 sr.sp.sf.ctry
 
 # saveRDS(sr.sp.sf.ctry,here("data","derived-data","risk.stack.sr.rds"))
-
 
