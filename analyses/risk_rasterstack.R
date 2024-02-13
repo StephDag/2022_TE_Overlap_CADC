@@ -36,32 +36,47 @@ localpath = here::here("data", "derived-data", "Spatial rasters")
 # # save to NetCDF
 # terra::writeCDF(risk.stack, paste0(localpath, "/risk.stack.nc"), overwrite=TRUE)
 # terra::writeCDF(risk.stack.sc, paste0(localpath, "/risk.stack.sc.nc"), overwrite=TRUE)
+library(here)
+source(here("analyses","00_setup.R"))
+
+source(here("analyses","001_Coastal_countries.R"))
+source(here("R","NormMinMax.R"))
+rm(cities, codelist, ctr, ctr.iati, ctr.region, eez)
+# coastal countries shapefile
+# Get the country boundaries data - sf dataframe
+countries <- rnaturalearth::ne_countries(returnclass = "sf",scale = 10) # 258 countries and territories
+
+# filter by coastal countries
+countries.shp.coastal <- countries %>%
+  filter(iso_a2 %in% coastal.ctr$iso2)
+dim(coastal.ctr)
+dim(countries.shp.coastal)
+
+
+# add country information
+world.2 <- countries.shp.coastal %>%
+  st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 
 
 # updated risk.stack from Steph:
 risk.stack.sc <- terra::rast(here::here("data/derived-data/Spatial rasters/risk.stack_sc_steph.tif" ))
 rast.names <- names(risk.stack.sc )
-# # correlation of normalized data (à faire après)
 
+
+
+# # correlation of normalized data (à faire après)
 risk.vals <- terra::values(risk.stack.sc)
+
 risk.stack_df <- as.data.frame(risk.stack.sc)     
-risk.vals.nona <- na.omit(risk.vals)
-colnames(risk.vals) <- rast.names
+risk.vals.nona <- na.omit(risk.vals) # this no longer works coz the vector is too big ...
+
+
+
 
 cor.risk <- cor(risk.vals.nona)
 heatmap(cor.risk)
 
-
-# add country information
-countries <- rnaturalearth::ne_countries(returnclass = "sf",scale = 10) # 258 countries and territories
-
-world.2 <- countries %>%
-  sf::st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-
-  # sr to sf
-risk.stars <- stars::st_as_stars(risk.stack.sc)
-risk.stack.sp.sf = sf::st_as_sf(risk.stack)
-crs(risk.stack.sp.sf) == crs(world.2)
+save.image(here::here("data/derived-data/risk_stack_session.rds"))
 
 
 essai <- risk.stack.steph %>% terra::subset(., 1)
@@ -114,6 +129,39 @@ essai <- sf::st_intersection(rs_sf[1:5000,], world.2)
 
 
 #### WE ARE HERE      #############################################
+
+
+
+library(here)
+source(here("analyses","00_setup.R"))
+
+source(here("analyses","001_Coastal_countries.R"))
+source(here("R","NormMinMax.R"))
+rm(cities, codelist, ctr, ctr.iati, ctr.region, eez)
+# coastal countries shapefile
+# Get the country boundaries data - sf dataframe
+countries <- rnaturalearth::ne_countries(returnclass = "sf",scale = 10) # 258 countries and territories
+
+# filter by coastal countries
+countries.shp.coastal <- countries %>%
+  filter(iso_a2 %in% coastal.ctr$iso2)
+dim(coastal.ctr)
+dim(countries.shp.coastal)
+
+
+# add country information
+world.2 <- countries.shp.coastal %>%
+  st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+
+
+risk.stack.steph <- terra::rast(here::here("data/derived-data/Spatial rasters/risk.stack_sc_steph.tif"))
+
+
+
+
+
+
+
 
 world.2$name %>% unique
 #risk.stack.sp.sf.ctry <- intersect(world.2,risk.stack.steph) #
