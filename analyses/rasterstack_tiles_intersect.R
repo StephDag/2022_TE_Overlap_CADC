@@ -23,37 +23,16 @@ world.2 <- countries.shp.coastal %>%
 
 risk.stack.steph <- terra::rast(here::here("data/derived-data/Spatial rasters/risk.stack_sc_steph.tif"))
 
-# try for the 1st col: extract values
-# problem = some layers have more NAs, so if I use them 1 by 1 they won't have the right length.
-small.stack <- terra::subset(risk.stack.steph, 1:2)
-
-boo <- as.data.frame(small.stack[1:10,], xy=TRUE, na.rm=TRUE)
-
- 
-small.stack %>% terra::crds()
-
-
-layers <- list()
-Sys.time()
-for (i in 1:2){
-  layers[[i]] <- terra::values(risk.stack.steph[, i], na.rm=TRUE, dataframe=TRUE )
-}
-Sys.time()
-
-
-apply(risk.stack.steph[,1:2], 2, )
-
-
-
-# extract coordinates from non-na cells:
-
-rs_xy <- terra::crds(risk.stack.steph, na.rm=TRUE, na.all=TRUE) %>% 
-  as.data.frame()
-# turn into a sf 
-rs_sf <- sf::st_as_sf(rs_xy, coords = c("x", "y"), crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-# intersect: but we need the rs values.
-essai <- sf::st_intersection(rs_sf[1:5000,], world.2 %>% dplyr::select(name, geometry))
-
+# 
+# 
+# # extract coordinates from non-na cells:
+# 
+# rs_xy <- terra::crds(risk.stack.steph, na.rm=TRUE, na.all=TRUE) %>% 
+#   as.data.frame()
+# # turn into a sf 
+# rs_sf <- sf::st_as_sf(rs_xy, coords = c("x", "y"), crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+# # intersect: but we need the rs values.
+# 
 
 
 
@@ -73,7 +52,7 @@ mosaic_rasterstack <- function(xmin1, xmax1, ymin1, ymax1){
   
   essai <- terra::crop(risk.stack.steph, bbox_v)
   
-  x=essai[] # to extract values from ratser
+  x=essai[] # to extract values from raster
   
   essai_xy <- terra::xyFromCell(essai, 1:terra::ncell(essai))
   
@@ -91,17 +70,68 @@ mosaic_rasterstack <- function(xmin1, xmax1, ymin1, ymax1){
   return(b2)
 }
 
-topleft <- b2
+# topleft <- mosaic_rasterstack(-18040096, 0, 0, 9020048)
+# topright <- mosaic_rasterstack(0, 18040096, 0, 9020048) rossie start 15h39
+# bottomright <- mosaic_rasterstack(0, 18040096, -9020048, 0) # rossie start 15h42
+# bottomleft <- mosaic_rasterstack(-18040096, 0, -9020048, 0) # rossie start 15h44
+
+# world.2 can be cropped too:
+crop_by_bbox <- function(shape, xmin1, xmax1, ymin1, ymax1){
+  bbox <- sf::st_bbox(c(xmin = xmin1, ymin =  ymin1, 
+                        xmax =    xmax1, ymax = ymax1),
+                      crs = sf::st_crs("+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"))
+  bbox <- sf::st_as_sf(sf::st_as_sfc(bbox))
+  
+  bbox_v <- terra::vect(bbox)
+  shape <- terra::vect(shape)
+  
+  if (terra::crs(shape) == terra::crs(bbox_v)){
+    essai <- terra::crop(shape, bbox_v)
+  }else{
+    stop("crs don't match")
+  }
+  return(essai)
+}
+w.topleft <- crop_by_bbox(world.2, -18040096, 0, 0, 9020048) %>%
+  sf::st_as_sf()
+w.topright <- crop_by_bbox(world.2, 0, 18040096, 0.1, 9020048)%>% # for some reason doesn't work on Rossie
+  sf::st_as_sf()
+w.bottomright <- crop_by_bbox(world.2, 0, 18040096, -9020048, 0)%>%
+  sf::st_as_sf()
+w.bottomleft <- crop_by_bbox(world.2, -18040096, 0, -9020048, 0)%>%
+  sf::st_as_sf()
 
 
 
-# then intersect with the countries:
+# let's just try it out on a small part:
 
-topito <- head(topleft) %>%
+# 
+# alb <- world.2 %>% dplyr::filter(name_en == "Albania")
+# alb <- st_transform(alb, crs=4326)
+# alb_pts <- data.frame(x=c(19, 20, 20 ), y=c(40, 41, 42 )) %>%
+#   sf::st_as_sf(., coords=c("x", "y"), crs=4326, remove=FALSE)
+# ggplot(data=alb) + geom_sf() + geom_point(data=alb_pts, aes(x = x, y=y))
+# 
+
+
+
+
+# then intersect with the countries
+
+bottomleft_sf <- bottomleft %>%
   as.data.frame() %>%
-  st_as_sf(.,  coords = c("x", "y"), crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs" )
+  st_as_sf(.,  coords = c("x", "y"), 
+           remove=FALSE, 
+           crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs" )
 
-topito_countries <- terra::intersect(topito, w2)
+sf::st_crs(world.2) == sf::st_crs(bottomleft_sf)
+
+Sys.time()
+topright_countries <- sf::st_intersection(topright_sf, w.topright %>% dplyr::select(name_en, geometry))
+Sys.time()
+# 15h20 début Rossinante topleft
+# 
+# 
 head(world.2)
 
 w2 <- world.2[ , c("name", "geometry") ]
