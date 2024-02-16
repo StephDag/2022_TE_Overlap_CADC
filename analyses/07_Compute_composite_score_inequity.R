@@ -25,15 +25,19 @@ countries %>%
 # load raster sc
 risk.stack.sc <- terra::rast(here("data","derived-data","Spatial rasters","risk.stack_sc.tif"))
 
+# extract xy from 1st layer
+df.risk.stack.sc <- terra::as.data.frame(risk.stack.sc[[1]],xy=T)
+
+df <- st_as_sf(x = df.risk.stack.sc,                         
+               coords = c("x", "y"),
+               crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+
 # add country information
 world.2 <- countries %>%
   st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 
 # # intersecting points with country
-# # Convert the SpatRaster to a SpatialPointsDataFrame
-# risk.stack_df <- as.data.frame(risk.stack.sc)
-# risk.stack.sp.sf.ctry <- intersect(world.2,risk.stack.sc) #
-# risk.stack.sp.sf.ctry <- st_intersection(risk.stack.sc, world.2) #
+df.risk.stack.sc.ctry <- st_intersection(df, world.2) #
 # #dim(risk.stack.sp.sf.ctry)  # 332583      6
 # #head(risk.stack.sp.sf.ctry)
 

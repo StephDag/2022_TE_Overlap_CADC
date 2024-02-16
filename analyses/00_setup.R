@@ -20,7 +20,7 @@
 #lapply(x, install.packages, character.only = TRUE)
 
 # for packages not on CRAN :
-install.packages("remotes")1
+install.packages("remotes")
  remotes::install_github("frbcesab/rutils")
 remotes::install_github("wmgeolab/rgeoboundaries")
 remotes::install_github("ropensci/rnaturalearthhires")

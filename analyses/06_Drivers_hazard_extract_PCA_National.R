@@ -1,10 +1,10 @@
-# compute climate hazard composite index 
+# generate scaled raster stack for contextual equity to compute composite score
 ### Stephanie D'Agata, Nov 2023
-### updates: Steph D'Agata & Camille Coux Jan 2024
-### output: raster stack of climate change variables + composite index
+### last updates: Steph D'Agata & Camille Coux Feb 2024
+### output: raster stack of climate change variables scaled 0 - 1
 
 library(here)
-source(hhere::here("analyses","00_setup.R"))
+source(here::here("analyses","00_setup.R"))
 source(here::here("analyses","001_Coastal_countries.R"),echo=T)
 source(here("R","NormMinMax.R"))
 
@@ -35,6 +35,8 @@ pop.world <- pop.world.nc[[4]]
 # mollweide projection
 pop.world.proj <- terra::project(pop.world,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 # plot(pop.world.proj)
+
+df.pop <- terra::as.data.frame(pop.world.proj)
 
 ##########################################
 #               Biodiversity             #
@@ -358,315 +360,52 @@ rm(pop.world.nc,pop.world,specie.grav,specie.grav.proj,pop.world.nc.change,pop.w
    pop.world.change.proj.resample,pop.world.change.proj.resample.coastal,mean.SLR.change,
    mean.SLR.change.proj,mean.SLR.change.proj.resample,mean.SLR.change.proj.coastal);gc()
 # save raster 
-#terra::saveRDS(risk.stack,file=here("data","derived-data","Spatial rasters","risk.stack.rds"))
 terra::writeRaster(risk.stack,here("data","derived-data","Spatial rasters","risk_stack.tif"))
+
 # sample
 #sr <- terra::spatSample(risk.stack, 1000,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
 #dim(sr) #332583      6
-# #saveRDS(sr,here("data","derived-data","risk.stack.sr.rds"))
-risk.stack <- readRDS(here::here("data","derived-data","Spatial rasters","risk.stack.rds"))
+rm(risk.stack)
+risk.stack <- rast(here::here("data","derived-data","Spatial rasters","risk_stack.tif"))
+
+# check normality of raster values
+x <- values(risk.stack[[13]]); # log the 1,4,12
+    plot(hist(x))
+    plot(hist(log(x)))
 
 # recreate scale raster stack
- risk.stack$mean.count.grav.V2.log.sc <- rescale01(risk.stack$mean.count.grav.V2.log); gc()
- risk.stack$povmap.grdi.v1.sc <- rescale01(risk.stack$povmap.grdi.v1); gc()
- risk.stack$Nutritional.dependence.sc <- rescale01(risk.stack$Nutritional.dependence); gc()
- risk.stack$Economic.dependence.sc <- rescale01(risk.stack$Economic.dependence); gc()
- risk.stack$ND_gain_NA.sf.proj.2015.sc <- rescale01(risk.stack$ND_gain_NA.sf.proj.2015); gc()
- #risk.stack$mean.SLR.change.proj.coastal.sc <- rescale01(risk.stack$SLR.change); gc()
- risk.stack$gender.ineq.sc <- rescale01(risk.stack$gender.ineq); gc()
-
- saveRDS(file="data/derived-data/Spatial rasters/risk.stack.rds",object=risk.stack)
+mean.count.grav.V2.log.sc <- rescale01(risk.stack$mean.count.grav.V2.log); gc() #1
+povmap.grdi.v1.sc <- rescale01(risk.stack$povmap.grdi.v1); gc() #2
+Nutritional.dependence.sc <- rescale01(risk.stack$Nutritional.dependence); gc() #3
+Economic.dependence.sc <- rescale01(risk.stack$Economic.dependence); gc() #4
+Voice_account.sc <- rescale01(risk.stack$Voice_account); gc() #5
+Political_stab.sc <- rescale01(risk.stack$Political_stab); gc() #6
+Gov_effect.sc <- rescale01(risk.stack$Gov_effect); gc() #7
+Reg_quality.sc <- rescale01(risk.stack$Reg_quality); gc() #8
+Rule_law.sc <- rescale01(risk.stack$Rule_law); gc() #9
+control_corr.sc <- rescale01(risk.stack$control_corr); gc() #10
+disaster_prep.sc <- rescale01(risk.stack$disaster_prep); gc() #11
+SLR_change.sc <- rescale01(log(risk.stack$SLR_change)); gc() #12
+gender.ineq.sc <- rescale01(risk.stack$gender.ineq); gc() #13
 
  # free memory
- rm(depriv,depriv.proj,depriv.proj.resample,depriv.proj.resample.coastal,pop.world,
-    pop.world.change.proj,pop.world.change.proj.coastal,pop.world.change.proj.resample,
-    pop.world.change.proj.resample.coastal,pop.world.nc,pop.world.nc.change,pop.world.proj,
-    mean.count.grav.V2.log.sc,mean.SLR.change.proj.coastal.sc)
+ rm(risk.stack)
  
 # create a stack raster of normalized raster
- risk.stack.sc <- c(risk.stack$mean.count.grav.V2.log.sc,
-                    risk.stack$povmap.grdi.v1.sc,
-                    risk.stack$Nutritional.dependence.sc,
-                    risk.stack$Economic.dependence.sc,
-                    risk.stack$ND_gain_NA.sf.proj.2015.sc,
-                    #risk.stack$mean.SLR.change.proj.coastal.sc,
-                    risk.stack$gender.ineq.sc); gc()
+ risk.stack.sc <- c(mean.count.grav.V2.log.sc,
+                    povmap.grdi.v1.sc,
+                    Nutritional.dependence.sc,
+                    Economic.dependence.sc,
+                    Voice_account.sc,
+                    Political_stab.sc,
+                    Gov_effect.sc,
+                    Reg_quality.sc,
+                    Rule_law.sc,
+                    control_corr.sc,
+                    disaster_prep.sc,
+                    SLR_change.sc,
+                    gender.ineq.sc); gc()
  
- saveRDS(risk.stack.sc,"data/derived-data/Spatial rasters/risk.stack.sc.rds")
+ summary(risk.stack.sc)
  
- #NAflag(risk.stack.sc$mean.count.grav.V2.log.sc) <- NA # bug
- r_stack_cor_5 <- focalPairs(risk.stack.sc,w=25, "pearson", na.rm=TRUE)
- r_stack_cor_5
- # save raster 
- gc()
- saveRDS(risk.stack.sc,"data/derived-data/Spatial rasters/risk.stack.sc.rds")
- 
-# correlation of normalized data 
- #cor.ineq.sc <- terra::layerCor(risk.stack.sc, fun="pearson",use="masked.complete")
-
-# species gravity
-species.grav.poverty <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$povmap.grdi.v1.sc), # [MW]
-     use = "na.or.complete")
-species.grav.nutr.dep <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$Nutritional.dependence.sc), # [MW]
-                            use = "na.or.complete"); gc()
-species.grav.econ.dep <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$Economic.dependence.sc), # [MW]
-                             use = "na.or.complete"); gc()
-species.grav.climate <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$ND_gain_NA.sf.proj.2015.sc), # [MW]
-                             use = "na.or.complete"); gc()
-species.grav.slr <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
-                            use = "na.or.complete"); gc()
-species.grav.gender <- cor(values(risk.stack$mean.count.grav.V2.log.sc),values(risk.stack$gender.ineq.sc), # [MW]
-                            use = "na.or.complete"); gc()
-#poverty
-poverty.nutr <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$Nutritional.dependence.sc), # [MW]
-                            use = "na.or.complete")
-poverty.econ <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$Economic.dependence.sc), # [MW]
-                    use = "na.or.complete")
-poverty.climate <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$ND_gain_NA.sf.proj.2015.sc), # [MW]
-                    use = "na.or.complete")
-poverty.grav.slr <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
-                        use = "na.or.complete"); gc()
-poverty.gender <- cor(values(risk.stack$povmap.grdi.v1.sc),values(risk.stack$gender.ineq.sc), # [MW]
-                       use = "na.or.complete")
-#nutritional dependency
-nutr.econ <- cor(values(risk.stack$Nutritional.dependence.sc),values(risk.stack$Economic.dependence.sc), # [MW]
-                    use = "na.or.complete")
-nutr.climate <- cor(values(risk.stack$Nutritional.dependence.sc),values(risk.stack$ND_gain_NA.sf.proj.2015.sc), # [MW]
-                       use = "na.or.complete")
-nutr.slr <- cor(values(risk.stack$Nutritional.dependence.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
-                    use = "na.or.complete")
-nutr.gender <- cor(values(risk.stack$Nutritional.dependence.sc),values(risk.stack$gender.ineq.sc), # [MW]
-                      use = "na.or.complete")
-#econ dependency
-econ.climate <- cor(values(risk.stack$Economic.dependence.sc),values(risk.stack$ND_gain_NA.sf.proj.2015.sc), # [MW]
-                    use = "na.or.complete")
-econ.slr <- cor(values(risk.stack$Economic.dependence.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
-                use = "na.or.complete")
-econ.gender <- cor(values(risk.stack$Economic.dependence.sc),values(risk.stack$gender.ineq.sc), # [MW]
-                   use = "na.or.complete")
-
-# climate
-climate.slr <- cor(values(risk.stack$ND_gain_NA.sf.proj.2015.sc),values(risk.stack$mean.SLR.change.proj.coastal.sc), # [MW]
-                    use = "na.or.complete")
-climate.gender <- cor(values(risk.stack$ND_gain_NA.sf.proj.2015.sc),values(risk.stack$gender.ineq.sc), # [MW]
-                   use = "na.or.complete")
-
-# slr
-slr.gender <- cor(values(risk.stack$mean.SLR.change.proj.coastal.sc),values(risk.stack$gender.ineq.sc), # [MW]
-                      use = "na.or.complete")
-
-# add country information
-world.2 <- countries %>%
-  st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-
-  # sr to sf
-risk.stack.sp.sf = st_as_sf(risk.stack)
-crs(risk.stack.sp.sf) == crs(world.2)
-
-# intersecting points with country
-# Convert the SpatRaster to a SpatialPointsDataFrame
-#risk.stack_df <- as.data.frame(risk.stack)
-#risk.stack.sp.sf.ctry <- intersect(world.2,risk.stack.sc) #
-#risk.stack.sp.sf.ctry <- st_intersection(risk.stack.sc, world.2) #
-#dim(risk.stack.sp.sf.ctry)  # 332583      6
-#head(risk.stack.sp.sf.ctry)
-
-# Transform raster grid to polygons grid
-z <- terra::as.polygons(risk.stack.sc)
-# Intersect with species
-u <- terra::intersect(z,world.2)
-
-
-# number of countries sampled
-unique(risk.stack.sp.sf.ctry$name_en) %>% length()
-
-# create composite risk score ##### INDICE COMPOSITE
-risk.mat <- as.data.frame(sr.sp.sf.ctry) %>%
-  select(ND_gain_NA.sf.proj.2015.sc,mean.count.grav.V2.log.sc,povmap.grdi.v1.sc,
-         Nutritional.dependence.sc,Economic.dependence.sc,gender.ineq)
-sr.sp.sf.ctry$risk.mat.score.sum <- apply(risk.mat, 1, sum)
-
-# geometric mean
-risk.mat.geom  <-  as.data.frame(sr.sp.sf.ctry) %>%
-  mutate(risk.mat.score.geom = sqrt(mean.count.grav.V2.log.sc*povmap.grdi.v1.sc*Nutritional.dependence.sc*
-                                      Economic.dependence.sc*ND_gain_NA.sf.proj.2015.sc*gender.ineq))
-sr.sp.sf.ctry$risk.mat.score.geom <- risk.mat.geom$risk.mat.score.geom
-sr.sp.sf.ctry
-
-# saveRDS(sr.sp.sf.ctry,here("data","derived-data","risk.stack.sr.rds"))
-
-#################################
-# for supplemental, spatial PCA #
-#################################
-sr <- readRDS(here("data","derived-data","risk.stack.sr.rds"))
-
-  # for spatial PCA
-# randomly select 5000 rows
-sample.2000 <- sample(seq(1,dim(sr.sp)[1],1),2000)
-sr.sp.2000 <- sr.sp[sample.2000,c(5:10)]
-
-sr.sp.2000.sf = st_as_sf(sr.sp.2000)
-crs(sr.sp.2000.sf) == crs(world.2)
-
-# intersecting points with country
-sr.sp.2000.sf.ctry <- st_intersection(sr.sp.2000.sf, world.2)
-dim(sr.sp.2000.sf.ctry) # 1986 175
-
-sr.sp.2000.sf.ctry.pca <- sr.sp.2000.sf.ctry[,c(1:6,53,118)]
-head(sr.sp.2000.sf.ctry.pca)
-dim(sr.sp.2000.sf.ctry.pca)
-
-# row to keep in original
-row2keep <- which(rownames(sr.sp.2000@data) %in% rownames(sr.sp.2000.sf.ctry.pca))
-
-# new spatial points df
-sr.sp.2000.ctry <- sr.sp.2000[row2keep,]
-sr.sp.2000.ctry <- cbind(sr.sp.2000.ctry,sr.sp.2000.sf.ctry.pca[,c("iso_a3","name_en")] %>% st_drop_geometry())
-
-# pca 
-
-# bandwith
-bw.gw.pca <- GWmodel::bw.gwpca(sr.sp.2000.ctry[,1:6], 
-                      vars = names(sr.sp.2000.ctry[,1:7]),
-                      k = 3,
-                      robust = FALSE,
-                      adaptive = TRUE)
-
-# geograph. weighted pcA
-gw.pca<- gwpca(sr.sp.2000.ctry[,1:6], 
-               vars = names(sr.sp.2000.ctry[,1:6]), 
-               bw=bw.gw.pca,
-               k = 3, 
-               robust = FALSE, 
-               adaptive = TRUE,
-               scores=T)
-
-
-# plot of the spatial PCA
-fviz_eig(gw.pca$pca, addlabels = TRUE, ylim = c(0, 50))
-
-fviz_pca_var(gw.pca$pca,
-             col.var = "contrib", # Color by contributions to the PC
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping
-)
-
-# Contributions of variables to PC1
-fviz_contrib(gw.pca$pca, choice = "var", axes = 1, top = 10,ylim=c(0,50))
-# Contributions of variables to PC2
-fviz_contrib(gw.pca$pca, choice = "var", axes = 2, top = 10,ylim=c(0,50))
-# Contributions of variables to PC3
-fviz_contrib(gw.pca$pca, choice = "var", axes = 3, top = 10,ylim=c(0,50))
-
-# save normalize score for each PC
-#sr.sp.2000.ctry$PC1 <- normalize(gw.pca$pca$scores[,1])
-#sr.sp.2000.ctry$PC2 <- normalize(gw.pca$pca$scores[,2])
-#sr.sp.2000.ctry$PC3 <- normalize(gw.pca$pca$scores[,3])
-
-# by country for each axis
-# Basic box plot
-p.PC1 <- ggplot(as.data.frame(sr.sp.2000.ctry), aes(x=reorder(name_en,-PC1), y=PC1)) + 
-  geom_boxplot() +
-  coord_flip() +
-  xlab("Countries") +
-  theme_bw()
-p.PC1
-ggsave(here("figures","PC1_distrib_ctr.png"),p.PC1,height=10,width=10)
-p.PC2 <- ggplot(as.data.frame(sr.sp.2000.ctry), aes(x=reorder(name_en,-PC2), y=PC2)) + 
-  geom_boxplot() +
-  coord_flip() +
-  xlab("Countries") +
-  theme_bw()
-p.PC2
-ggsave(here("figures","PC2_distrib_ctr.png"),p.PC2,height=10,width=10)
-p.PC3 <- ggplot(as.data.frame(sr.sp.2000.ctry), aes(x=reorder(name_en,-PC3), y=PC3)) + 
-  geom_boxplot() +
-  coord_flip() +
-  xlab("Countries") +
-  theme_bw()
-p.PC3
-ggsave(here("figures","PC3_distrib_ctr.png"),p.PC3,height=10,width=10)
-
-# 
-p.risk.score <- ggplot(as.data.frame(sr.sp.sf.ctry), aes(x=reorder(name_en,-risk.mat.score.sum), y=risk.mat.score.sum)) + 
-  geom_boxplot() +
-  coord_flip() +
-  xlab("Countries") +
-  ylab("Contextual Inequity Scores") +
-  theme_bw()
-p.risk.score
-ggsave(here("figures","Contextual_Ineq_score_distrib_ctr.png"),p.risk.score,height=12,width=12)
-
-p.PC.score <- ggarrange(p.PC1,p.PC2,p.PC3,p.risk.score,ncol=2,nrow=2,labels=c("A","B","C","D"))
-ggsave(here("figures","double_exposure_ctry_distribution_2000samples.pdf"),p.PC.score,height=18,width=18)
-
-## add country
-fviz_pca_biplot(gw.pca$pca, repel = TRUE,
-                col.var = "#2E9FDF", # Variables color
-                col.ind = "#696969"  # Individuals color
-)
-
-###################
-fviz_pca_ind(gw.pca$pca,
-             geom.ind = "point", # show points only (nbut not "text")
-             col.ind = iris$Species, # color by groups
-             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
-             addEllipses = TRUE, # Concentration ellipses
-             legend.title = "Groups"
-)
-
-fviz_pca_ind(gw.pca$pca,
-             geom.ind = "point", # show points only (nbut not "text")
-             col.ind = iris$Species, # color by groups
-             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
-             addEllipses = TRUE,ellipse.type = "convex", # Concentration ellipses
-             legend.title = "Groups"
-)
-
-fviz_pca_biplot(gw.pca$pca, 
-                # Individuals
-                geom.ind = "point",
-                fill.ind = iris$Species, col.ind = "black",
-                pointshape = 21, pointsize = 2,
-                palette = "jco",
-                addEllipses = TRUE,
-                # Variables
-                alpha.var ="contrib", col.var = "contrib",
-                gradient.cols = "RdYlBu",
-                
-                legend.title = list(fill = "Species", color = "Contrib",
-                                    alpha = "Contrib")
-)
-
-# PC1
-plot(sr.sp.5000$terrest.temp.change.sc,sr.sp.5000$risk.score.PC1)
-plot(sr.sp.5000$povmap.grdi.v1.sc,sr.sp.5000$risk.score.PC1)
-plot(sr.sp.5000$Nutritional.dependence.sc,sr.sp.5000$risk.score.PC1)
-plot(sr.sp.5000$Economic.dependence.sc,sr.sp.5000$risk.score.PC1)
-plot(sr.sp.5000$population.sc,sr.sp.5000$risk.score.PC1)
-plot(sr.sp.5000$mean.count.grav.V2.log.sc,sr.sp.5000$risk.score.PC1)
-
-# PC2
-plot(sr.sp.5000$terrest.temp.change.sc,sr.sp.5000$risk.score.PC2)
-plot(sr.sp.5000$povmap.grdi.v1.sc,sr.sp.5000$risk.score.PC2)
-plot(sr.sp.5000$Nutritional.dependence.sc,sr.sp.5000$risk.score.PC2)
-plot(sr.sp.5000$Economic.dependence.sc,sr.sp.5000$risk.score.PC2)
-plot(sr.sp.5000$population.sc,sr.sp.5000$risk.score.PC2)
-plot(sr.sp.5000$mean.count.grav.V2.log.sc,sr.sp.5000$risk.score.PC2)
-
-# function for calculation pproportion of variance 
-prop.var <- function(gwpca.obj, n.components) {
-  return((rowSums(gwpca.obj$var[, 1:n.components]) /rowSums(gwpca.obj$var)) * 100)
-}
-var.gwpca <- prop.var(gw.pca, 3)
-mf$var.gwpca <- var.gwpca
-
-
-
-# function for calculation pproportion of variance 
-prop.var <- function(gwpca.obj, n.components) {
-  return((rowSums(gwpca.obj$var[, 1:n.components]) /rowSums(gwpca.obj$var)) * 100)
-}
-
-var.gwpca <- prop.var(bw.gw.pca, 3)
-mf$var.gwpca <- var.gwpca
+ terra::writeRaster(risk.stack.sc,here("data","derived-data","Spatial rasters","risk.stack_sc.tif"),overwrite=TRUE)
