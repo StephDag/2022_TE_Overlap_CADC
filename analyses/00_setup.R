@@ -1,8 +1,8 @@
-# load packages for the project
-# pacman::p_load(here,janitor,tidytext,strex,fraser,star,readxl,ggpubr,scico,ggrepel,
-#                rnaturalearth,rnaturalearthdata,rnaturalearthhires,leaflet,ggmap,rio,terra,maps,sp,wdpar,
-#                wordcloud,RColorBrewer,wordcloud2,tm,dbscan,rgeoboundaries,foreach,doParallel,doSNOW,tcltk,
-#                ncdf4,RANN,mapview,sf,stars,tidyverse,"pdftools","ncdf4")
+# # load packages for the project
+#  pacman::p_load(here,janitor,tidytext,strex,fraser,star,readxl,ggpubr,scico,ggrepel,
+#                 rnaturalearth,rnaturalearthdata,rnaturalearthhires,leaflet,ggmap,rio,terra,maps,sp,wdpar,
+#                 wordcloud,RColorBrewer,wordcloud2,tm,dbscan,rgeoboundaries,foreach,doParallel,doSNOW,tcltk,
+#                 ncdf4,RANN,mapview,sf,stars,tidyverse,pdftools,ncdf4)
 
 #x <- c("here","dplyr","janitor","tidyverse","tidytext","strex","readxl","ggpubr","scico","ggrepel",
 #       "rnaturalearth","rnaturalearthdata","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",
@@ -20,24 +20,27 @@
 #lapply(x, install.packages, character.only = TRUE)
 
 # for packages not on CRAN :
-# remotes::install_github("frbcesab/rutils")
-# remotes::install_github("wmgeolab/rgeoboundaries")
-# remotes::install_github("ropensci/rnaturalearthhires")
+install.packages("remotes")1
+ remotes::install_github("frbcesab/rutils")
+remotes::install_github("wmgeolab/rgeoboundaries")
+remotes::install_github("ropensci/rnaturalearthhires")
 
-
+install.packages("R.utils")
+library(R.utils)
 x <- c("here","dplyr","janitor","tidytext","strex","readxl","ggpubr","scico","ggrepel",
        "rnaturalearth","rnaturalearthdata","leaflet","sf","ggmap","rio","terra","maps","sp","wdpar",
        "wordcloud","RColorBrewer","wordcloud2","tm","data.table","rutils",
        "foreach","doParallel","doSNOW","htmltools",
        # "tcltk",
        "svMisc","elevatr",
-       "dbscan","rgeoboundaries","ncdf4","RANN","mapview","sf","stars",
+       "dbscan","rgeoboundaries","ncdf4","RANN","mapview","stars",
        "pdftools","tidyverse",
-       "factoextra","vegan","GWmodel","ggrepel")
+       "factoextra","vegan","GWmodel","ggrepel","elevatr",
+       "rnaturalearth")
 
 y <- x[!(x %in% installed.packages())]
 
-if (length(y)>0) lapply(y, install.packages, character.only = TRUE)
+if (length(y)>0) lapply(y, install.packages, character.only = TRUE,dependencies=T)
 
 
 lapply(x, library, character.only = TRUE)

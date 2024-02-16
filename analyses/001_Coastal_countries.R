@@ -67,4 +67,4 @@ coastal.ctr[which(coastal.ctr$iso2 == ""),"iso2"] <- c("NA","AN")
   # save
 #saveRDS(cities,here("data","derived-data","geo.names.coastal.rds"))
   # load
-cities <- readRDS(here("data","derived-data","geo.names.coastal.rds"))
+#cities <- readRDS(here("data","derived-data","geo.names.coastal.rds"))

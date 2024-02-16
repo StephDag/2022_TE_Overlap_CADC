@@ -14,4 +14,3 @@ rescale01 <- function(x) {
   x
 }
 
-values(povmap-grdi-v1)
