@@ -25,21 +25,26 @@ countries %>%
 # load raster sc
 risk.stack.sc <- terra::rast(here("data","derived-data","Spatial rasters","risk.stack_sc.tif"))
 
-# extract xy from 1st layer
+# extract xy from 1st layer and transform it to dataframe
 df.risk.stack.sc <- terra::as.data.frame(risk.stack.sc[[1]],xy=T)
 
+
+# to spatial dataframe
 df <- st_as_sf(x = df.risk.stack.sc,                         
                coords = c("x", "y"),
                crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 
-# add country information
+# country sf information
 world.2 <- countries %>%
   st_transform(crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
 
-# # intersecting points with country
-df.risk.stack.sc.ctry <- st_intersection(df, world.2) #
-# #dim(risk.stack.sp.sf.ctry)  # 332583      6
-# #head(risk.stack.sp.sf.ctry)
+# # intersecting raster points with country
+df.risk.stack.sc.ctry <- st_intersection(df, world.2) # take very long
+
+
+
+# End of the script
+# ***********************************************************
 
 # test with large sample
 sr <- terra::spatSample(risk.stack.sc, 10000000,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
