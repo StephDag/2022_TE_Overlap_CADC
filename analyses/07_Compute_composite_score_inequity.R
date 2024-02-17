@@ -26,7 +26,7 @@ countries %>%
 risk.stack.sc <- terra::rast(here("data","derived-data","Spatial rasters","risk.stack_sc.tif"))
 
 # extract xy from 1st layer and transform it to dataframe
-df.risk.stack.sc <- terra::as.data.frame(risk.stack.sc[[1]],xy=T)
+df.risk.stack.sc.2 <- terra::as.data.frame(risk.stack.sc[[c(1,2)]],xy=T)
 
 
 # to spatial dataframe
@@ -41,7 +41,14 @@ world.2 <- countries %>%
 # # intersecting raster points with country
 df.risk.stack.sc.ctry <- st_intersection(df, world.2) # take very long
 
+# left join by rownames
+df.risk.stack.sc.ctry <- df.risk.stack.sc.ctry %>%
+    mutate(ID = rownames(df.risk.stack.sc.ctry))
+df.risk.stack.sc.2 <- df.risk.stack.sc.2 %>%
+  mutate(ID = rownames(df.risk.stack.sc.2))
 
+df.risk.stack.sc.ctry.full <- left_join(df.risk.stack.sc.2,df.risk.stack.sc.ctry, by="ID")
+dim(df.risk.stack.sc.ctry.full)
 
 # End of the script
 # ***********************************************************
