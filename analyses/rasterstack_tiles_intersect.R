@@ -70,10 +70,10 @@ mosaic_rasterstack <- function(xmin1, xmax1, ymin1, ymax1){
 # ymin1=0
 # ymax1=9020048
 
-# topleft <- mosaic_rasterstack(-18040096, 0, 0, 9020048)
-# topright <- mosaic_rasterstack(0, 18040096, 0, 9020048)
-# bottomright <- mosaic_rasterstack(0, 18040096, -9020048, 0) 
-# bottomleft <- mosaic_rasterstack(-18040096, 0, -9020048, 0)
+topleft <- mosaic_rasterstack(-18040096, 0, 0, 9020048)
+topright <- mosaic_rasterstack(0, 18040096, 0, 9020048)
+bottomright <- mosaic_rasterstack(0, 18040096, -9020048, 0)
+bottomleft <- mosaic_rasterstack(-18040096, 0, -9020048, 0)
 
 
 
@@ -93,7 +93,7 @@ crop_by_bbox <- function(sf_shape, xmin1, xmax1, ymin1, ymax1){
   
   if(sf::st_crs(bbox_v) == sf::st_crs(sf_shape)){
     essai <- sf::st_crop(sf_shape %>% sf::st_make_valid(), bbox_v) %>%
-      sf::st_make_valid()
+      sf::st_make_valid() # important tweek to keep to avoid error.
   }else{
     stop("crs don't match")
   }
@@ -102,14 +102,14 @@ return(essai)
   
 sf_shape <- world.2
 
-xmin1=0
-xmax1=18040096
-ymin1=0
-ymax1=9020048
+# xmin1=0
+# xmax1=18040096
+# ymin1=0
+# ymax1=9020048
 
 w.topleft2 <- crop_by_bbox(world.2, -18040096, 0, 0, 9020048) %>%
   sf::st_as_sf() 
-w.topright <- crop_by_bbox(world.2, 0, 18040096, 0, 9020048) %>% # for some reason doesn't work on Rossie
+w.topright <- crop_by_bbox(world.2, 0, 18040096, 0, 9020048) %>% 
   sf::st_as_sf()
 w.bottomright <- crop_by_bbox(world.2, 0, 18040096, -9020048, 0)%>%
   sf::st_as_sf()
@@ -129,27 +129,29 @@ topright_sf <- topright %>%
 sf::st_crs(w.topright) == sf::st_crs(topright_sf)
 
 
-# run this part on Rossinante, takes a long time
-Sys.time()
-topright_countries <- 
-  sf::st_intersection(
-    topright_sf, 
-    w.topright %>% dplyr::select(name_en, geometry))  %>% 
-  sf::st_make_valid() # this is just in case you get that stupid error with sf about geom not being valid
-Sys.time()
+# # run this part on Rossinante, takes a long time (several hours)
+# Sys.time()
+# topright_countries <- 
+#   sf::st_intersection(
+#     topright_sf, 
+#     w.topright %>% dplyr::select(name_en, geometry))  %>% 
+#   sf::st_make_valid() # this is just in case you get that stupid error with sf about geom not being valid
+# Sys.time()
 
 
 
 # now read in the gpkg files:
 topleft <- sf::st_read("data/derived-data/topleft.gpkg")
-bottomleft <- sf::st_read("data/derived-data/bottomleft.gpkg")
+topright <- sf::st_read("data/derived-data/topright.gpkg")
 bottomright <- sf::st_read("data/derived-data/bottomright.gpkg")
+bottomleft <- sf::st_read("data/derived-data/bottomleft.gpkg")
 
 topleft_df <- as.data.frame(topleft)
-bottomleft_df <- as.data.frame(bottomleft)
+topright_df <- as.data.frame(topright)
 bottomright_df <- as.data.frame(bottomright)
+bottomleft_df <- as.data.frame(bottomleft)
 
 
-mega <- rbind(topleft_df, bottomleft_df, bottomright_df)
+mega <- rbind(topleft_df, topright_df, bottomright_df, bottomleft_df)
 
-
+write.table(mega, "data/derived-data/riskstack_countries.txt", sep = "\t", dec = "." )
