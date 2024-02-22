@@ -213,6 +213,20 @@ p.risk.score.with.disaster <- ggplot(as.data.frame(df.risk.stack.sc.ctry.ind) %>
 p.risk.score.with.disaster
 ggsave(here("figures","Contextual_Ineq_score_distrib_ctr_with_disaster_69ctries.png"),p.risk.score.with.disaster,height=12,width=12)
 
+# check with OECD database
+# load dataset with potential projects in coastal countries
+oecd.dat <- import(here("data","derived-data","ocean_ODA_CADC_2010_2021_equity.csv"))
+#names(oecd)
+summary(oecd.dat)
+
+ctry.oecd.db <- oecd.dat$ctry %>%
+  unique()
+ctry.oecd.db[-grep("regional",ctry.oecd.db)]
+
+ctry.oecd.db.coastal <- ctry.oecd.db[which(ctry.oecd.db %in% coastal.ctr$country)] # 109 coastal countries
+
+ctry.oecd.db.coastal[which(ctry.oecd.db.coastal %in% df.risk.stack.sc.ctry.ind$name)] %>% length()
+
 ###### END of the scritpt #############
 
 
@@ -269,22 +283,6 @@ common_ctry <- intersect(common_ctry,disaster.ctry$name)
 ctry.oecd.db.coastal[which(ctry.oecd.db.coastal %in% common_ctry)] %>% length()
 
 length(common_ctry)
-  # check with OECD database
-# load dataset with potential projects in coastal countries
-oecd.dat <- import(here("data","derived-data","ocean_ODA_CADC_2010_2021_equity.csv"))
-#names(oecd)
-summary(oecd.dat)
-
-ctry.oecd.db <- oecd.dat$ctry %>%
-  unique()
-ctry.oecd.db[-grep("regional",ctry.oecd.db)]
-
-ctry.oecd.db.coastal <- ctry.oecd.db[which(ctry.oecd.db %in% coastal.ctr$country)] # 109 coastal countries
-
-ctry.oecd.db.coastal[which(ctry.oecd.db.coastal %in% gender.ineq$Country)] %>% length()
-
-
-ctry.oecd.db.coastal[which(ctry.oecd.db.coastal %in% common_ctry)] %>% length()
 
 # End of the script
 # ***********************************************************
