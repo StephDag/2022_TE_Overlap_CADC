@@ -1,11 +1,13 @@
 # generate scaled raster stack for contextual equity to compute composite score
 ### Stephanie D'Agata, Nov 2023
 ### last updates: Steph D'Agata & Camille Coux Feb 2024
-### output: raster stack of climate change variables scaled 0 - 1
+### output: raster stack of climate change variables scaled 0 - 1 + spatial df
 
 library(here)
 source(here::here("analyses","00_setup.R"))
+
 source(here::here("analyses","001_Coastal_countries.R"),echo=T)
+
 source(here("R","NormMinMax.R"))
 
 # coastal countries shapefile
@@ -122,7 +124,7 @@ names(SLR.score_NA)[3:29] <- paste("SLR",names(SLR.score_NA)[3:29],sep="_")
 # in countries directly
 countries.shp.coastal <-  countries.shp.coastal %>%
   left_join(SLR.score_NA,by=c("iso_a3" = "ISO3"))
-dim(countries.shp.coastal) # 119 countries
+dim(countries.shp.coastal) # 179 countries
 
 # #### project
 # SLR.score_NA.sf.proj <- st_transform(SLR.score_NA,crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
@@ -189,7 +191,6 @@ fsi <- terra::readRDS(here::here("data","raw-data","Global_fsi_ineq.rds"))  %>%
                     country == "Tanzania" ~ 0.560, # GII of 2021 - republic of tanzania
                     country == "South Korea" ~ 0.067, # republic of Korea in GII dataset
                     country == "Syria" ~ 0.477, # Syrian Arab Republic in GII dataset
-                    country == "Bolivia" ~ 0.418, # Bolivia (Plurinational State of) in GII dataset
                     country == "Bolivia" ~ 0.418, # Bolivia (Plurinational State of) in GII dataset
                     country == "Congo Democratic Republic" ~ 0.601, # Congo (Democratic Republic of the) in GII dataset
                     country == "Congo Republic" ~ 0.564, # Congo in GII dataset
@@ -377,7 +378,8 @@ marine.dep.NA[which(marine.dep.NA$country.clean %in% countries$name_en== F),"cou
 # add to countries
 countries.shp.coastal <-  countries.shp.coastal %>%
   left_join(marine.dep.NA,by=c("name_en" = "country.clean"))
-dim(countries.shp.coastal) # 119 countries
+dim(countries.shp.coastal) 
+names(countries.shp.coastal) 
 
 countries.shp.coastal %>% filter(is.na(Nutritional.dependence))
 
@@ -509,9 +511,7 @@ rm(pop.world.nc,pop.world,specie.grav,specie.grav.proj,pop.world.nc.change,pop.w
 # save raster 
 terra::writeRaster(risk.stack,here("data","derived-data","Spatial rasters","risk_stack.tif"),overwrite=T)
 
-# sample
-#sr <- terra::spatSample(risk.stack, 1000,na.rm=T,as.points=T,values=T,xy=T,method="random") # sample 5000000 random grid cells
-#dim(sr) #332583      6
+# load 
 rm(risk.stack)
 risk.stack <- rast(here::here("data","derived-data","Spatial rasters","risk_stack.tif"))
 
