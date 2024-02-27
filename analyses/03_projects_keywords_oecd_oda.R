@@ -13,7 +13,7 @@ source(here("analyses","00_setup.R"))
 # load dataset with potential projects in coastal countries
 oecd.dat <- import(here("data","raw-data","OECD","ocean_ODA_2010_2021.csv"),sep=";",dec=",")
 names(oecd.dat)
-
+dim(oecd.dat) # 61102 26
 ################################################
 #           identify key words                #
 ################################################
@@ -73,17 +73,21 @@ oecd.dat2 <-  oecd.dat.to.search %>%
     mutate(marine.term= paste(unique(str_extract_all(comb,paste0(key.marine, collapse="|"))[[1]]),collapse="; "), # extract all matching terms
            n.marine.term=str_count(marine.term, '\\w+'), # count # different terms identified
            marine=ifelse(n.marine.term>1,1,0), # indicator to determine if the project meets criteria (to adjust)
+           # sustainability projects
            sustain.term= paste(unique(str_extract_all(comb,paste0(key.sustainability, collapse="|"))[[1]]),collapse="; "),
            n.sustain.term=str_count(sustain.term, '\\w+'),
            sustainability=ifelse(n.sustain.term>1,1,0),
+           # land projects
            land.term= paste(unique(str_extract_all(comb,paste0(key.land, collapse="|"))[[1]]),collapse="; "),
            n.land.term=str_count(land.term, '\\w+'),
            land=ifelse(n.land.term>1,1,0),
+           # mentionning equity 
            equity.term= paste(unique(str_extract_all(comb,paste0(key.equity, collapse="|"))[[1]]),collapse="; "),
            n.equity.term=str_count(equity.term, '\\w+'),
            equity=ifelse(n.equity.term>1,1,0))
 
 # identify high/low confidence projects
+# if only 1 term --> futther check, if >1 , ok
 oecd.dat2 <- oecd.dat2 %>%
   mutate(
     marine.confid = case_when(
@@ -93,9 +97,9 @@ oecd.dat2 <- oecd.dat2 %>%
       TRUE ~ "high"), # high confidence = matches 1 high confidence term or >1 term
     sustain.confid = case_when(
       n.sustain.term == 0 ~ "NA",
-      n.sustain.term == 1 & grepl(paste0(sustainability.check.confid, collapse="|"),marine.term) ~ "check",
+      n.sustain.term == 1 & grepl(paste0(sustainability.check.confid, collapse="|"),marine.term) ~ "check", # Steph on the 26/02/2024 - sustain term instead of marine term?
       n.sustain.term == 1 & grepl(paste0(sustainability.low.confid, collapse="|"),sustain.term) ~ "low",
-      TRUE ~ "high"),
+/      TRUE ~ "high"),
     land.confid = case_when(
       n.land.term  == 0 ~ "NA",
       n.land.term == 1 & grepl(paste0(land.check.confid, collapse="|"),land.term) ~ "check",
@@ -141,7 +145,7 @@ oecd.dat3<-  oecd.dat2 %>%
       n.equity.term == 1 & equity.confid == "high" ~ 1, # high confidence = matches 1 high confidence term or >1 term
       n.equity.term == 1 & equity.confid%in%c("low","check") ~ 2,
       TRUE ~ NA_integer_),
-    cadc=case_when(
+    cadc=case_when( # 1 = CADC fir sure, 2 = lower certainty, 0 (not sure at all, include 2 and 2?) # check combination of confidence scores
       marine == 1 & sustainability == 1 | marine == 1 & land == 1~ 1,
       marine == 1 & sustainability == 2 | marine == 2 & sustainability == 1 ~ 2,
       marine == 1 & land == 2 | marine == 2 & land == 1 ~ 2,
@@ -155,23 +159,14 @@ oecd.dat3<-  oecd.dat2 %>%
 # export(term.check,"data/data_check/keyword_check.csv")
 export(oecd.dat3,here("data","data_check","ocean_ODA_2010_2021_equity.csv"))
 
-##### plots and shapefiles
-# Categorized geographic projects based based on coastal, sustainability (CADC) and sustainable land-based projects
-# outputs: dataset identifying potential CADC projects 
-# Stephanie D'Agata & David Gill
-# Sept 2023
-# Updates: Oct 2023
-library(here)
-source(here("analyses","00_setup.R"))
-
 ############################
 #   COASTAL COUNTRIES      #
 ############################
 
 # load dataset with potential projects in coastal countries
-oecd.dat <- import(here("data","data_check","ocean_ODA_2010_2021_equity.csv"))
+oecd.dat <- import(here("data","raw-data","OECD","ocean_ODA_2010_2021.csv"))
 #names(oecd)
-summary(oecd)
+summary(oecd.dat)
 
 ## map cumulative number of initiatives
 world <- ne_countries(scale = "large", returnclass = "sf")
@@ -213,96 +208,6 @@ oecd <- oecd.dat %>%
 # check for remaining missing countries
 sort(unique(oecd$ctry[!oecd$ctry%in%projected.world$name_en]))
 
-#---- summaries ----
-(oecd.trend <- oecd %>% 
-   group_by(year,cadc.type) %>% 
-   summarise(usd.disb=sum(disbursement_usd_million_defl,na.rm=T)) %>% 
-   ggplot( aes(x = year, y = usd.disb, fill=cadc.type)) +
-   geom_area() +
-   labs(title="`non-equity` CADC vs `equity` CADC vs other ocean economy", y="USD million disbursment")+
-   theme_classic())
-ggsave("oecd_trend.png",width = 8, height = 4)
 
-oecd.cadc.ctry.trend <- oecd %>% 
-  group_by(year,ctry,cadc) %>% 
-  summarise(usd.disb=sum(disbursement_usd_million_defl,na.rm=T)) %>% 
-  filter(cadc=="cadc") %>% 
-  group_by(ctry) %>% 
-  arrange(year) %>% 
-  summarise(start.yr=first(usd.disb),
-            end.yr=last(usd.disb),
-            total=sum(usd.disb)) %>% 
-  mutate(trend=((end.yr)-(start.yr))) %>% 
-  filter(ctry%in%projected.world$name_en) %>% 
-  arrange(-trend)
-head(oecd.cadc.ctry.trend)
-
-
-(p.cadc.trend.usd <- ggplot(oecd.cadc.ctry.trend[1:20,],aes(x=reorder(ctry,trend),y=trend)) +
-    geom_bar(stat = "identity")+
-    labs(title="Top 20 increase in ODA 2010-2021",x="country",y="increase in $USD disbursed")+
-    coord_flip()+
-    theme_classic())
-ggsave("top_cadc_trend.png",width = 8, height = 4)
-
-(p.cadc.total.usd <- oecd.cadc.ctry.trend%>% 
-    arrange(-total) %>% 
-    slice(1:20) %>% 
-    ggplot(aes(x=reorder(ctry,total),y=total)) +
-    geom_bar(stat = "identity")+
-    labs(title="Top 20 in ODA 2010-2021",x="country",y="$USD disbursed total")+
-    coord_flip()+
-    theme_classic())
-ggsave("top_cadc_total.png",width = 8, height = 4)
-#----- maps ---- 
-# summarise values 
-oecd.ctry <- oecd %>% 
-  group_by(ctry,cadc.type) %>%  
-  summarise(total.project=n(),
-            total.usd=sum(disbursement_usd_million_defl,na.rm=T))
-export(oecd.ctry,here("data","derived-data","ocean_ODA_CADC_2010_2021_equity.csv"))
-
-# join oecd data to map
-CADC.OECD.ocean.wide.proj.ctr.sf <- projected.world %>%
-  left_join(oecd.ctry,by=c("name_en"="ctry")) %>% 
-  rename(ctry=name_en)
 
 saveRDS(CADC.OECD.ocean.wide.proj.ctr.sf,here("data","derived-data","ocean_ODA_CADC_2010_2021_equity_sf.RDS"))
-
-table(CADC.OECD.ocean.wide.proj.ctr.sf$cadc.type)
-(p.cadc.ctry.proj <- CADC.OECD.ocean.wide.proj.ctr.sf %>% 
-    # convert everything else to NAs to retain the other countries on map
-    mutate(cadc.project=ifelse(cadc.type%in%c("equity CADC","not equity CADC"),NA,total.project)) %>% 
-    ggplot() +
-    geom_sf(aes(fill = cadc.project))  + 
-    theme_void() +
-    labs(title = "# CADC projects per country") + 
-    scale_fill_distiller(palette = "Spectral", na.value = "white"))
-
-(p.cadc.ctry.usd <- CADC.OECD.ocean.wide.proj.ctr.sf %>% 
-    # convert everything else to NAs to retain the other countries on map
-    mutate(cadc.usd=ifelse(cadc.type%in%c("equity CADC","not equity CADC"),NA,total.usd)) %>% 
-    ggplot() +
-    geom_sf(aes(fill = cadc.usd))  + 
-    theme_void() +
-    labs(title = "CADC $USD million per country") + 
-    scale_fill_distiller(palette = "Spectral", na.value = "white"))
-
-cowplot::plot_grid(p.cadc.ctry.proj,p.cadc.ctry.usd, nrow = 2)
-ggsave("cadc_ctry_map.png",width = 4, height = 8)
-
-
-# join oecd trend data to map
-#CADC.OECD.ocean.wide.proj.ctr.sf.trend <- projected.world %>%
-#   left_join(oecd.cadc.ctry.trend,by=c("name_en"="ctry")) %>% 
-#   rename(ctry=name_en)
-# 
-# (p.cadc.ctry.trend.usd <- CADC.OECD.ocean.wide.proj.ctr.sf.trend %>% 
-#     mutate(trend.usd=ifelse(cadc!="CADC",NA,trend)) %>% 
-#     ggplot() +
-#     geom_sf(aes(fill = trend.usd))  + 
-#     theme_void() +
-#     scale_fill_distiller(palette = "Spectral", na.value = "white"))
-
-
-

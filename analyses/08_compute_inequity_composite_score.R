@@ -1,4 +1,4 @@
-# compute climate hazard composite index 
+# compute ocean equity composite index 
 ### Stephanie D'Agata, Nov 2023
 ### updates: Steph D'Agata Feb 2024
 ### output: composite index

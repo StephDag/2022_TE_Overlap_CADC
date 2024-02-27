@@ -135,7 +135,7 @@ df.risk.stack.sc.ctry.ind <- df.risk.stack.sc.ctry.full %>%
 # coastal
 df.risk.stack.sc.ctry.ind.coastal <- df.risk.stack.sc.ctry.ind %>%
   filter(iso_a3 %in% countries.shp.coastal$iso_a3)
-
+summary(df.risk.stack.sc.ctry.ind.coastal)
 # save clean df
 saveRDS(df.risk.stack.sc.ctry.ind.coastal,here("data","derived-data","df.cont.inequity.compo.coastal.rds"))
 
