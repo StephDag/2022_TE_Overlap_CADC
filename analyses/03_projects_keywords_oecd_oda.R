@@ -181,7 +181,7 @@ sort(unique(projected.world$name_en))
 oecd <- oecd.dat %>% 
   mutate(
     cadc=ifelse(sustainable_ocean_ODA==TRUE|(landbased_ODA==TRUE&ocean_ODA==FALSE),"cadc","non-cadc"),
-    equity.cadc=ifelse(equity==1 & cadc=="cadc","equity","not equity"),
+    equity.cadc=ifelse(equity==1 & cadc=="cadc","equity","not equity"), #non-adc take also not equity
     cadc.usd=ifelse(cadc=="cadc",disbursement_usd_million_defl,0),
     equity.usd=ifelse(equity.cadc=="equity",disbursement_usd_million_defl,0),
     cadc.type=case_when(

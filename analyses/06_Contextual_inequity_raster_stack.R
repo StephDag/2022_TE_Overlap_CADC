@@ -390,12 +390,16 @@ countries.shp.coastal %>% filter(is.na(Nutritional.dependence))
 WB_gov <- read.csv(here("data","raw-data","WB_GOV_2015.csv"),header=T,sep=";")
 head(WB_gov)
 
+WB_gov %>% filter(Code == "TLS")
+
 # add governance indicators
 countries.shp.coastal <-  countries.shp.coastal %>%
   left_join(WB_gov,by=c("iso_a3" = "Code"))
 
 saveRDS(countries.shp.coastal,here("data","derived-data","indicators_countries.shp.coastal.rds"))
 
+#countries.shp.coastal <- readRDS(here("data","derived-data","indicators_countries.shp.coastal.rds"))
+#countries.shp.coastal %>% filter(iso_a3 == "TLS")
 ######################################################################
 #   Create a data.frame for country level information and rasterize  #
 ######################################################################

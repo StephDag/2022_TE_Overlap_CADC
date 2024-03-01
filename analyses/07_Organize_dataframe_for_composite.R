@@ -50,28 +50,26 @@ dim(countries.shp.coastal)
 #   mutate(ID = rownames(df.risk.stack.sc.2))
 #
 # df.risk.stack.sc.ctry.full <- left_join(df.risk.stack.sc.2,df.risk.stack.sc.ctry, by="ID")
-# dim(df.risk.stack.sc.ctry.full)
-#
-# # reload stack
-rm(df.risk.stack.sc.ctry.full)
- df.risk.stack.sc.ctry.full <- readRDS(here("data","derived-data","Spatial rasters","df.risk_stack_ctry.rds"))
- df.risk.stack.sc.ctry.full <- df.risk.stack.sc.ctry.full %>%
-   select(-mean.count.grav.V2.log.x,-povmap.grdi.v1.x,     
--Nutritional.dependence.x,-Economic.dependence.x,-mean.count.grav.V2.log.y,-povmap.grdi.v1.y,     
--Nutritional.dependence.y,-Economic.dependence.y,-Voice_account,-Political_stab,        
--Gov_effect,-Reg_quality,-Rule_law,-control_corr, -SLR_change)
-names(df.risk.stack.sc.ctry.full); gc()
-names(risk.stack.sc)
+# # dim(df.risk.stack.sc.ctry.full)
+# #
+# # # reload stack
+ rm(df.risk.stack.sc.ctry.full)
+ df.risk.stack.sc.ctry.full <- readRDS(here("data","derived-data","df.cont.inequity.compo.coastal.rds"))
+  df.risk.stack.sc.ctry.full <- df.risk.stack.sc.ctry.full %>%
+    select(-Voice_account,-Political_stab,        
+ -Gov_effect,-Reg_quality,-Rule_law,-control_corr)
+ names(df.risk.stack.sc.ctry.full); gc()
+# names(risk.stack.sc)
 
 # # add the other layers
 # names(risk.stack.sc)
 # # extract xy from 1st layer and transform it to dataframe
-  df.risk.stack.sc.temp.0 <- terra::as.data.frame(risk.stack.sc[[c(1,2)]],xy=T)
- df.risk.stack.sc.temp <- terra::as.data.frame(risk.stack.sc[[c(3,4)]],xy=T); gc()
- df.risk.stack.sc.temp.1 <- terra::as.data.frame(risk.stack.sc[[c(5,6)]],xy=T); gc()
- df.risk.stack.sc.temp.2 <- terra::as.data.frame(risk.stack.sc[[c(7,8)]],xy=T); gc()
- df.risk.stack.sc.temp.3 <- terra::as.data.frame(risk.stack.sc[[c(9,10)]],xy=T); gc()
- df.risk.stack.sc.temp.4 <- terra::as.data.frame(risk.stack.sc[[c(11,12,13)]],xy=T); gc()
+df.risk.stack.sc.temp.0 <- terra::as.data.frame(risk.stack.sc[[c(1,2)]],xy=T); gc()
+df.risk.stack.sc.temp <- terra::as.data.frame(risk.stack.sc[[c(3,4)]],xy=T); gc()
+df.risk.stack.sc.temp.1 <- terra::as.data.frame(risk.stack.sc[[c(5,6)]],xy=T); gc()
+df.risk.stack.sc.temp.2 <- terra::as.data.frame(risk.stack.sc[[c(7,8)]],xy=T); gc()
+df.risk.stack.sc.temp.3 <- terra::as.data.frame(risk.stack.sc[[c(9,10)]],xy=T); gc()
+df.risk.stack.sc.temp.4 <- terra::as.data.frame(risk.stack.sc[[c(11,12,13)]],xy=T); gc()
 # #
 # # left join with main
  # gravity + poverty
@@ -91,10 +89,10 @@ names(risk.stack.sc)
    mutate(ID = rownames(df.risk.stack.sc.temp.1)); gc()
  df.risk.stack.sc.ctry.full <- left_join(df.risk.stack.sc.ctry.full,df.risk.stack.sc.temp.1 %>% select(-x,-y), by="ID")
  names(df.risk.stack.sc.ctry.full)
- df.risk.stack.sc.ctry.full$Voice_account.x <- NULL
- df.risk.stack.sc.ctry.full$Political_stab.x <- NULL
- names(df.risk.stack.sc.ctry.full)[177:178] <- gsub(".y","",names(df.risk.stack.sc.ctry.full)[177:178])
- 
+ # df.risk.stack.sc.ctry.full$Voice_account.x <- NULL
+ # df.risk.stack.sc.ctry.full$Political_stab.x <- NULL
+ # names(df.risk.stack.sc.ctry.full)[177:178] <- gsub(".y","",names(df.risk.stack.sc.ctry.full)[177:178])
+ # 
  
 # # 2
  df.risk.stack.sc.temp.2 <- df.risk.stack.sc.temp.2 %>%
@@ -135,6 +133,19 @@ df.risk.stack.sc.ctry.ind <- df.risk.stack.sc.ctry.full %>%
 # coastal
 df.risk.stack.sc.ctry.ind.coastal <- df.risk.stack.sc.ctry.ind %>%
   filter(iso_a3 %in% countries.shp.coastal$iso_a3)
+
+df.risk.stack.sc.ctry.ind.coastal %>% filter(iso_a3 == "TLS")
+
+# reverse governance indicators
+df.risk.stack.sc.ctry.ind.coastal <- df.risk.stack.sc.ctry.ind.coastal %>%
+   mutate(Voice_account = 1-Voice_account) %>%
+   mutate(Political_stab = 1-Political_stab) %>%
+   mutate(Gov_effect = 1-Gov_effect) %>%
+   mutate(Reg_quality = 1-Reg_quality) %>%
+   mutate(Rule_law = 1-Rule_law) %>%
+   mutate(control_corr = 1-control_corr)
+ 
+
 summary(df.risk.stack.sc.ctry.ind.coastal)
 # save clean df
 saveRDS(df.risk.stack.sc.ctry.ind.coastal,here("data","derived-data","df.cont.inequity.compo.coastal.rds"))
@@ -151,13 +162,13 @@ df.risk.stack.sc.ctry.ind.coastal %>% filter(!is.na(Economic.dependence)) %>%
   select(iso_a3) %>% unique() %>% dim() # 149 countries
 
 df.risk.stack.sc.ctry.ind.coastal %>% filter(!is.na(gender.ineq)) %>%
-  select(iso_a3) %>% unique() %>% dim() # 113 countries
+  select(iso_a3) %>% unique() %>% dim() # 125 countries
 
 df.risk.stack.sc.ctry.ind.coastal %>% filter(!is.na(SLR_change)) %>%
   select(iso_a3) %>% unique() %>% dim() # 148 countries
 
 df.risk.stack.sc.ctry.ind.coastal %>% filter(!is.na(disaster_prep)) %>%
-  select(iso_a3) %>% unique() %>% dim() # 92 countries
+  select(iso_a3) %>% unique() %>% dim() # 104 countries
 
 df.risk.stack.sc.ctry.ind.coastal %>% filter(!is.na(control_corr)) %>%
   select(iso_a3) %>% unique() %>% dim() # 178 countries

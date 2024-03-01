@@ -42,28 +42,56 @@ oecd.dat.sf.ctry.trend <- oecd.dat.sf.ctry %>%
 oecd.dat.sf.ctry.trend %>% filter(year == 2010 & var == "usd.comm.year")
 oecd.dat.sf.ctry.trend %>% filter(year == 2021 & var == "usd.comm.year")
 
+# color blind
+hcl_palettes(plot = TRUE)
+# number of categories
+q3 <- qualitative_hcl(3, palette = "Harmonic")
+q3
+
+######################### FIGURE 1A #############################
+
 # plot temporal trend
 p.oecd.trend <- ggplot(data=oecd.dat.sf.ctry.trend,aes(x = year, y = val, fill=cadc.type)) +
   geom_area() +
   labs(title=" 'equity` CADC vs other CADC", y="USD million committed") +
   facet_wrap(.~var, scales = "free_y") +
+  scale_fill_discrete_qualitative(palette = "Dark 3", nmax = 6, order = 3:5) +
+  labs(fill = "CADC types") +
   theme_classic()
 p.oecd.trend
 ggsave(here("figures","SUPP_Figure1A.png"))
   
-  # select only perc committed or perc. disbursed
+  # select only perc committed
+p.oecd.trend.perc.commited <- oecd.dat.sf.ctry.trend %>% filter(var == "pct.comm") %>%
+  droplevels() %>%
+  ggplot(aes(x = year, y = val, fill=cadc.type)) +
+  geom_area() +
+  scale_fill_discrete_qualitative(palette = "Dark 3", nmax = 6, order = 3:5) +
+  geom_hline(yintercept=75, linetype="dashed", color = "grey") +
+  geom_hline(yintercept=50, linetype="dashed", color = "grey") +
+  geom_hline(yintercept=25, linetype="dashed", color = "grey") +
+  labs(y="Percentage committed investment (%)",x="Year") +
+  labs(fill = "CADC types") +
+  xlim(2010,2021) +
+  theme_classic() +
+  theme(legend.position="top") 
+p.oecd.trend.perc.commited
+ggsave(here("figures","Figure1A.png"))
 
-
-
-#---- summaries ----
-# Annual change in USD disbursement
-oecd.trend <- oecd %>% 
-  filter(cadc.type!="other ocean economy") %>% 
-  group_by(year,cadc.type) %>% 
-  summarise(usd.comm=sum(commitment_usd_million_defl,na.rm=T),
-            usd.disb=sum(disbursement_usd_million_defl,na.rm=T)) %>% 
-  arrange(cadc.type,year) %>% 
-
+# supplemental $ committed by year
+# select only perc committed
+p.oecd.trend.usd.commited <- oecd.dat.sf.ctry.trend %>% filter(var == "usd.comm.year") %>%
+  droplevels() %>%
+  ggplot(aes(x = year, y = val, fill=cadc.type)) +
+  geom_area() +
+  scale_fill_discrete_qualitative(palette = "Dark 3", nmax = 6, order = 3:5) +
+  labs(y="USD committed investment ($)",x="Year") +
+  labs(fill = "CADC types") +
+  xlim(2010,2021) +
+  theme_classic() +
+  theme(legend.position="top") 
+p.oecd.trend.usd.commited
+ggsave(here("figures","SUPP_Figure1A.png"))
 
 # plot temporal trend
 p.oecd.trend <- oecd.trend %>% 
@@ -75,9 +103,70 @@ ggplot( aes(x = year, y = val, fill=cadc.type)) +
   theme_classic()
 p.oecd.trend
 
+######################### FIGURE 1B #############################
+# maps of total commited investment by countries
+# select only perc committed
+rm(oecd.dat.sf.ctry.total.commited)
+oecd.dat.sf.ctry.total.commited <- oecd.dat.sf.ctry %>%
+  filter(cadc.type != "other ocean economy") %>%
+  select(iso_a3,year,cadc.type,usd.comm,usd.disb) %>%
+  group_by(iso_a3,year) %>%
+  summarise(usd.comm.year=sum(usd.comm,na.rm=T) %>% round(2),
+            usd.disb.year=sum(usd.disb,na.rm=T) %>% round(2)) %>%
+  arrange(iso_a3,year) %>%
+  ungroup() %>%
+  complete(iso_a3,year,fill = list(usd.comm.year = 0,usd.disb.year=0)) %>%
+  group_by(iso_a3) %>%
+  mutate(cum.usd.comm=cumsum(usd.comm.year)%>% round(2),
+         cum.usd.disb=cumsum(usd.disb.year)%>% round(2)) %>%
+  ungroup() %>%
+  st_drop_geometry() %>%
+  as.data.frame() %>%
+  select(-geometry)
 
+oecd.dat.sf.ctry.total.commited %>% filter(iso_a3 == "CHL")
+
+## map cumulative number of initiatives
+world <- ne_countries(scale = "large", returnclass = "sf")
+class(world)
+crs.val.robinson = "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs" # The World Robinson projection (ESRI 54030)
+projected.world = st_transform(world, crs.val.robinson)
+
+oecd.dat.sf.ctry.total.commited.sf <- projected.world %>%
+  left_join(oecd.dat.sf.ctry.total.commited,by="iso_a3")
+
+p.map.2021.cum.ctry <- ggplot(data =  projected.world) +
+  geom_sf(color="black",fill = "white") +
+  geom_sf(data=oecd.dat.sf.ctry.total.commited.sf %>% filter(year == "2021"),aes(fill = cum.usd.comm)) +
+  scale_fill_viridis_c(option = "plasma",na.value = "whitesmoke") +
+  labs(fill = "Investment ($)") +
+  theme_bw()
+p.map.2021.cum.ctry
+ggsave(here("figures","Figure1B.png"),p.map.2021.cum.ctry)
+
+######################### FIGURE 1C and 1D #############################
+
+# create df - 1 raw = 1 country = mean contextual equity, % equity CADC, total investment (cum2021) # oecd.dat.sf.ctry.total.commited
+oecd.dat.sf.ctry.equity <- oecd.dat.sf.ctry %>%
+  filter(cadc.type %in% c("equity CADC","other CADC")) %>%
+  st_drop_geometry() %>%
+  select(iso_a3,name_en,cadc.type,total.project) %>%
+  group_by(iso_a3) %>%
+  mutate(tot.project.CADC = sum(total.project)) %>%
+  ungroup() %>%
+  group_by(iso_a3,cadc.type) %>%
+  mutate(tot.project.eq=sum(total.project)) %>%
+  ungroup() %>%
+  mutate(perc.equi = 100*round(tot.project.eq/tot.project.CADC,3)) %>%
+  select(-total.project) %>%
+  distinct() %>%
+  as.data.frame()
+oecd.dat.sf.ctry.equity
+
+# add total investment in 2021
+oecd.dat.sf.ctry.equity.commit <- oecd.dat.sf.ctry.equity %>%
+  left_join(oecd.dat.sf.ctry.total.commited %>% filter(year == "2021"),by="iso_a3")
   
-
 # load composite scores
 df.risk.stack.sc.ctry.ind.coastal <- readRDS(here("data","derived-data","df.cont.inequity.compo.coastal.scores.rds"))
 
@@ -90,19 +179,81 @@ cont.ineq.ctry <- df.risk.stack.sc.ctry.ind.coastal %>%
   ungroup() %>%
   select(iso_a3,cont.eq.score.mean,cont.eq.sd) %>%
   distinct() %>%
+  filter(!is.na(cont.eq.score.mean)) %>%
   as.data.frame()
+
 head(cont.ineq.ctry)
 dim(cont.ineq.ctry)
 
-# add to oecd sf object
+# add contextual inequity
+rm(oecd.dat.sf.ctry.equity.commit.ineq)
+oecd.dat.sf.ctry.equity.commit.ineq <- oecd.dat.sf.ctry.equity.commit %>%
+  full_join(cont.ineq.ctry,by="iso_a3") 
+  # mutate(tot.project.CADC = replace_na(tot.project.CADC, 0)) %>%
+  # mutate(tot.project.eq = replace_na(tot.project.eq, 0)) %>%
+  # mutate(perc.equi = replace_na(perc.equi, 0)) %>%
+  # mutate(cum.usd.comm = replace_na(cum.usd.comm, 0))
+summary(oecd.dat.sf.ctry.equity.commit.ineq)
 
-rm(oecd.dat.sf.ctry.scores)
-oecd.dat.sf.ctry.scores <- oecd.dat.sf.ctry %>%
-  left_join(cont.ineq.ctry,by="iso_a3",relationship = "many-to-many")
+# CADC invest - contextual ineq - log
+sc.risk.CADC.dollars.log <- ggplot(oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cadc.type=="equity CADC"),aes(x=log10(cum.usd.comm+1),y=cont.eq.score.mean,label=name_en)) +
+  geom_point()+
+  geom_text_repel() +
+  #geom_smooth(method="lm") +
+  #scale_color_gradient(low="blue", high="red")+
+  xlab("log(Total investment by country) ($)") +
+  ylab("Average contextual inequity by country") +
+  ylim(0,0.7) + #   xlim(0,1)  + 
+  theme_bw()
+sc.risk.CADC.dollars.log
 
-# check 
-table(oecd.dat.sf.ctry.scores$cadc.type)
+# CADC invest - contextual ineq
+sc.risk.CADC.dollars <- ggplot(oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cadc.type=="equity CADC"),aes(x=cum.usd.comm,y=cont.eq.score.mean,label=name_en)) +
+  geom_point()+
+  geom_text_repel() +
+  #geom_smooth(method="lm") +
+  #scale_color_gradient(low="blue", high="red")+
+  xlab("Total investment by country ($)") +
+  ylab("Average contextual inequity by country") +
+  ylim(0,0.75) + #   xlim(0,1)  + 
+  theme_bw()
+sc.risk.CADC.dollars
+ggsave(here("figures","Figure1C.png"),sc.risk.CADC.dollars)
 
+# CADC risk - equity
+CADC.risk.eq.dollars <- ggplot(oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cadc.type=="equity CADC"),aes(x=perc.equi,y=cont.eq.score.mean,label=name_en)) +
+  geom_point(aes(size=cum.usd.comm,color=cum.usd.comm)) +
+  scale_color_viridis_c(option = "plasma",name = "Investment ($)") +
+ # scale_color_gradient(low="blue", high="red",name = "Investment ($)")+
+  xlab("Equity (% total of CADC projects)") +
+  geom_text_repel() +
+  ylab("Average contextual inequity by country") +
+  xlim(0,50) +  ylim(0,0.75) +
+  geom_vline(xintercept=50,linetype = 2)+
+  geom_hline(yintercept=0.5,linetype = 2)+
+  theme_bw()
+CADC.risk.eq.dollars
+ggsave(here("figures","Figure1D.png"),CADC.risk.eq.dollars)
+
+
+# full panel
+CADC.full.panel <- ggarrange(p.oecd.trend.perc.commited,
+                             p.map.2021.cum.ctry,
+                             sc.risk.CADC.dollars,
+                             CADC.risk.eq.dollars,
+                             labels=c("a","b","c","d"),ncol=2,nrow=2)
+ggsave(here("figures","CADC.risk.equity.ABCD.pdf"),CADC.full.panel,width=10,height=10)
+ggsave(here("figures","CADC.risk.equity.ABCD.png"),CADC.full.panel,width=10,height=10)
+
+library(cowplot)
+
+plot_grid(p.oecd.trend.perc.commited,
+          p.map.2021.cum.ctry,
+          sc.risk.CADC.dollars,
+          CADC.risk.eq.dollars, ncol=2, align="hv",labels=c("a","b","c","d"))
+
+file4 <- tempfile("file4", fileext = ".pdf")
+save_plot(file4, p4, ncol = 2, base_asp = 1.1)
 ### supplementals - correlation between disbursement and committed
 disb_comm_ctry <- oecd.dat.sf.ctry %>%
   select(iso_a3,total.comm.usd,total.distr.usd) %>%

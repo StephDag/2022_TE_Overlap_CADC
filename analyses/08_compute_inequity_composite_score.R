@@ -9,23 +9,25 @@ source(here::here("analyses","001_Coastal_countries.R"),echo=T)
 
 # load data
 # # save clean df
-# df.risk.stack.sc.ctry.ind.coastal <- readRDS(here("data","derived-data","df.cont.inequity.compo.coastal.rds"))
-# 
+ df.risk.stack.sc.ctry.ind.coastal <- readRDS(here("data","derived-data","df.cont.inequity.compo.coastal.rds"))
+
 # # create composite risk score ##### INDICE COMPOSITE with disaster prep
-# risk.mat <- df.risk.stack.sc.ctry.ind.coastal %>%
-#   select(mean.count.grav.V2.log,povmap.grdi.v1,Nutritional.dependence,Economic.dependence,
-#          Voice_account,Political_stab,Gov_effect,Reg_quali,Rule_law,control_corr,disaster_prep,SLR_change,gender.ineq)
-# df.risk.stack.sc.ctry.ind.coastal$risk.mat.score.mean.with.dprep <- apply(risk.mat, 1, mean)
+ rm(risk.mat)
+ risk.mat <- df.risk.stack.sc.ctry.ind.coastal %>%
+   select(mean.count.grav.V2.log,povmap.grdi.v1,Nutritional.dependence,Economic.dependence,
+          Voice_account,Political_stab,Gov_effect,Reg_quality,Rule_law,control_corr,disaster_prep,SLR_change,gender.ineq)
+ 
+ df.risk.stack.sc.ctry.ind.coastal$risk.mat.score.mean.with.dprep <- apply(risk.mat, 1, mean)
 # 
 # # create composite risk score ##### INDICE COMPOSITE without disaster prep
-# rm(risk.mat)
-# risk.mat <- df.risk.stack.sc.ctry.ind.coastal %>%
-#   select(mean.count.grav.V2.log,povmap.grdi.v1,Nutritional.dependence,Economic.dependence,
-#          Voice_account,Political_stab,Gov_effect,Reg_quali,Rule_law,control_corr,SLR_change,gender.ineq)
-# df.risk.stack.sc.ctry.ind.coastal$risk.mat.score.mean.without.dprep <- apply(risk.mat, 1, mean)
-# 
+ rm(risk.mat)
+ risk.mat <- df.risk.stack.sc.ctry.ind.coastal %>%
+   select(mean.count.grav.V2.log,povmap.grdi.v1,Nutritional.dependence,Economic.dependence,
+          Voice_account,Political_stab,Gov_effect,Reg_quality,Rule_law,control_corr,SLR_change,gender.ineq)
+ df.risk.stack.sc.ctry.ind.coastal$risk.mat.score.mean.without.dprep <- apply(risk.mat, 1, mean)
+ 
 # # save df with composite scores
-# saveRDS(df.risk.stack.sc.ctry.ind.coastal,here("data","derived-data","df.cont.inequity.compo.coastal.scores.rds"))
+saveRDS(df.risk.stack.sc.ctry.ind.coastal,here("data","derived-data","df.cont.inequity.compo.coastal.scores.rds"))
 
 # load composite scores
 df.risk.stack.sc.ctry.ind.coastal <- readRDS(here("data","derived-data","df.cont.inequity.compo.coastal.scores.rds"))
