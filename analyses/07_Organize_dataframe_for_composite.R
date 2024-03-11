@@ -145,7 +145,6 @@ df.risk.stack.sc.ctry.ind.coastal <- df.risk.stack.sc.ctry.ind.coastal %>%
    mutate(Rule_law = 1-Rule_law) %>%
    mutate(control_corr = 1-control_corr)
  
-
 summary(df.risk.stack.sc.ctry.ind.coastal)
 # save clean df
 saveRDS(df.risk.stack.sc.ctry.ind.coastal,here("data","derived-data","df.cont.inequity.compo.coastal.rds"))
