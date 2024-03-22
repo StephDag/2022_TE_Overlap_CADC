@@ -4,6 +4,11 @@
 library(here)
 source(here("analyses","00_setup.R"))
 source(here("analyses","001_Coastal_countries.R"))
+source(here("R","NormMinMax.R"))
+
+# coastal countries shapefile
+# Get the country boundaries data - sf dataframe
+countries <- ne_countries(returnclass = "sf",scale = 10) # 258 countries and territories
 
 ####################################
 #         CADC Risk figures        #

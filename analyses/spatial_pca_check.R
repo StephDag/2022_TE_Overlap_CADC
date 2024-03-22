@@ -1,17 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 ################ check # countries
 # poverty check - 
 pov.ctry <- df.risk.stack.sc.ctry.ind %>% select(name, povmap.grdi.v1) %>%
