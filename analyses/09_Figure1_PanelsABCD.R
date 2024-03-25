@@ -259,19 +259,32 @@ oecd.dat.invest.by.subregion <- oecd.dat.sf.ctry %>%
   dplyr::filter(!is.na(cadc.type)) %>%
   droplevels() %>%
   dplyr::group_by(region_un,subregion) %>%
-  dplyr::summarise(usd.comm.region.cadc=sum(usd.comm,na.rm=T) %>% round(2),
-                   usd.disb.region.cadc=sum(usd.disb,na.rm=T) %>% round(2)) %>%
-  dplyr::arrange(desc(usd.comm.region.cadc)) %>%
+  dplyr::summarise(usd.comm.subregion.cadc=sum(usd.comm,na.rm=T) %>% round(2),
+                   usd.disb.subregion.cadc=sum(usd.disb,na.rm=T) %>% round(2)) %>%
   ungroup() %>%
-  mutate(perc.comm = round(100*usd.comm.region.cadc/sum(usd.comm.region.cadc),2), 
-         perc.disb = round(100*usd.disb.region.cadc/sum(usd.disb.region.cadc),2)) %>%
+  mutate(perc.comm = round(100*usd.comm.subregion.cadc/sum(usd.comm.subregion.cadc),2), 
+         perc.disb = round(100*usd.disb.subregion.cadc/sum(usd.disb.subregion.cadc),2)) %>%
   mutate(cum.perc.comm = cumsum(perc.comm), 
          cum.perc.disb = cumsum(perc.disb)) %>%
+  group_by(region_un) %>%
+  dplyr::mutate(usd.comm.region.cadc=sum(usd.comm.subregion.cadc,na.rm=T) %>% round(2),
+                   usd.disb.region.cadc=sum(usd.disb.subregion.cadc,na.rm=T) %>% round(2)) %>%
+  arrange(desc(usd.comm.region.cadc)) %>%
+  ungroup() %>%
+  mutate(cum.invest.comm_usd.regions = cumsum(usd.comm.region.cadc * !duplicated(usd.comm.region.cadc)),
+         cum.invest.disb.usd.regions = cumsum(usd.disb.region.cadc * !duplicated(usd.disb.region.cadc))) %>% 
+  ungroup() %>%
+  mutate(perc.comm.regions = round(100*cum.invest.comm_usd.regions/sum(cum.invest.comm_usd.regions * !duplicated(cum.invest.comm_usd.regions)),2), 
+         perc.disb.regions = round(100*cum.invest.disb.usd.regions/sum(cum.invest.disb.usd.regions * !duplicated(cum.invest.disb.usd.regions)),2)) %>%
+  mutate(cum.perc.comm.regions = cumsum(perc.comm.regions * !duplicated(perc.comm.regions)), 
+         cum.perc.disb.regions = cumsum(perc.disb.regions * !duplicated(perc.disb.regions))) %>%
+  #dplyr::arrange(desc(cum.invest.comm_usd.regions)) %>%
   as.data.frame()
+
 oecd.dat.invest.by.subregion
 write.csv(oecd.dat.invest.by.subregion,here("outputs","investment_subregion.csv"))
 
-sum(oecd.dat.invest.by.subregion$usd.comm.region.cadc)
+sum(oecd.dat.invest.by.subregion$usd.comm.subregion.cadc) # 32.6 billions
 
 #### investment by country by year
 oecd.dat.invest.by.country <- oecd.dat.sf.ctry %>%
@@ -505,6 +518,11 @@ oecd.dat.sf.ctry.equity.commit.ineq <- oecd.dat.sf.ctry.equity.commit %>%
   # mutate(perc.equi = replace_na(perc.equi, 0)) %>%
   # mutate(cum.usd.comm = replace_na(cum.usd.comm, 0))
 summary(oecd.dat.sf.ctry.equity.commit.ineq)
+
+x <- oecd.dat.sf.ctry.equity.commit.ineq %>% 
+  filter(!is.na(tot.project.CADC))
+hist(x$cont.eq.score.mean)
+oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cont.eq.score.mean > 0.66)
 
 # CADC invest - contextual ineq - log
 sc.risk.CADC.dollars.log <- ggplot(oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cadc.type=="equity CADC"),aes(x=log10(cum.usd.comm+1),y=cont.eq.score.mean,label=name_en)) +

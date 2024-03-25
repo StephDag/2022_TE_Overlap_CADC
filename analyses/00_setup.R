@@ -37,7 +37,7 @@ x <- c("here","dplyr","janitor","tidytext","strex","readxl","ggpubr","scico","gg
        "pdftools","tidyverse",
        "factoextra","vegan","GWmodel","ggrepel","elevatr",
        "rnaturalearth",
-       "colorspace")
+       "colorspace","envcpt")
 
 y <- x[!(x %in% installed.packages())]
 
