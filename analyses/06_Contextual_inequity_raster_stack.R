@@ -1,6 +1,6 @@
 # generate scaled raster stack for contextual equity to compute composite score
 ### Stephanie D'Agata, Nov 2023
-### last updates: Steph D'Agata & Camille Coux Feb 2024
+### last updates: Steph D'Agata & Camille Coux April 2024
 ### output: raster stack of climate change variables scaled 0 - 1 + spatial df
 
 library(here)
@@ -90,41 +90,49 @@ pop.world.proj.coastal <- crop(pop.world.proj, specie.grav.resample,mask=T)
 
 
 ##########################################
-#                 SLR                    #
+#                 SLR  risk                  #
 ##########################################
 
 # # mean SLR changes - (2021-2040) vs ( 1995 - 2014)
-# mean.SLR.change  <- rast(here("data","raw-data","IPCC_Climate","CMIP6 - Sea level rise (SLR) Change meters - Near Term (2021-2040) SSP2-4.5 (rel. to 1995-2014) - Annual .tiff"))
-# plot(mean.SLR.change)
-# 
+ low.lying.SLR  <- rast(here("data","raw-data","SEDAC Low Lying Areas","lecz_v3_spatial_data","data","merit_leczs.tif"))
+ #plot(low.lying.SLR)
+ 
+# crop to reduce
+ low.lying.SLR.resample <- resample(low.lying.SLR,pop.world, method="bilinear")
+ #plot(low.lying.SLR.resample)
+
 # # mollweide
-# mean.SLR.change.proj <- project(mean.SLR.change,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
-# #plot(mean.SLR.change.proj)
-# 
-# # resample mean.SLR.change.proj to match population raster
-# mean.SLR.change.proj.resample <- resample(mean.SLR.change.proj, pop.world.proj, method="bilinear")
-# plot(mean.SLR.change.proj.resample)
+ low.lying.SLR.proj <- terra::project(low.lying.SLR.resample,"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
+ #plot(low.lying.SLR.proj)
 # 
 # # crop to species gravity/coastal
-# mean.SLR.change.proj.coastal <- crop(mean.SLR.change.proj.resample, specie.grav.resample,mask=T)
-# plot(mean.SLR.change.proj.coastal)
-
-  # country level - from ND Gain
-SLR.score <- read.csv(here("data","raw-data","nd_gain_country_index_2023","resources","indicators","id_infr_02","score.csv"),
-                           header=T,sep=",")
-
-SLR.score_NA <- SLR.score %>%
-  filter(!is.na(X2015))
-dim(SLR.score_NA) # 151 countries
-head(SLR.score_NA) # 151 countries
-
-# change names
-names(SLR.score_NA)[3:29] <- paste("SLR",names(SLR.score_NA)[3:29],sep="_")
-
-# in countries directly
-countries.shp.coastal <-  countries.shp.coastal %>%
-  left_join(SLR.score_NA,by=c("iso_a3" = "ISO3"))
-dim(countries.shp.coastal) # 179 countries
+ low.lying.SLR.proj.resample.coastal <- crop(low.lying.SLR.proj, specie.grav.resample,mask=T)
+ #plot(low.lying.SLR.proj.resample.coastal)
+# 
+# # filter values <= 10
+#  low.lying.SLR.proj.resample.coastal.10 <- clamp(low.lying.SLR.proj.resample.coastal, upper=10)
+#  plot(low.lying.SLR.proj.resample.coastal.10)
+#  
+#  # crop human population with 10m LLA
+#  pop.lla.10m <- crop(pop.world.proj.coastal,low.lying.SLR.proj.resample.coastal.10,mask=T)
+#  plot(pop.lla.10m)
+# # 
+#   # country level - from ND Gain
+# SLR.score <- read.csv(here("data","raw-data","nd_gain_country_index_2023","resources","indicators","id_infr_02","score.csv"),
+#                            header=T,sep=",")
+# 
+# SLR.score_NA <- SLR.score %>%
+#   filter(!is.na(X2015))
+# dim(SLR.score_NA) # 151 countries
+# head(SLR.score_NA) # 151 countries
+# 
+# # change names
+# names(SLR.score_NA)[3:29] <- paste("SLR",names(SLR.score_NA)[3:29],sep="_")
+# 
+# # in countries directly
+# countries.shp.coastal <-  countries.shp.coastal %>%
+#   left_join(SLR.score_NA,by=c("iso_a3" = "ISO3"))
+# dim(countries.shp.coastal) # 179 countries
 
 # #### project
 # SLR.score_NA.sf.proj <- st_transform(SLR.score_NA,crs="+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs")
@@ -465,11 +473,11 @@ disaster.prep <- rasterize(countries.data.sf.proj.vt,pop.world.proj, field="DPRE
 disaster.prep_coastal <- crop(disaster.prep, specie.grav.resample,mask=T)
 plot(disaster.prep_coastal)
 
-# SLR
-SLR.score <- rasterize(countries.data.sf.proj.vt,pop.world.proj, field="SLR_X2015")
-# crop to species gravity/coastal 
-SLR.score_coastal <- crop(SLR.score, specie.grav.resample,mask=T)
-plot(SLR.score_coastal)
+# # SLR
+# SLR.score <- rasterize(countries.data.sf.proj.vt,pop.world.proj, field="SLR_X2015")
+# # crop to species gravity/coastal 
+# SLR.score_coastal <- crop(SLR.score, specie.grav.resample,mask=T)
+# plot(SLR.score_coastal)
 
 # gender ineq
 ineq.score <- rasterize(countries.data.sf.proj.vt,pop.world.proj, field="ineq.drv")
@@ -482,80 +490,121 @@ plot(ineq.score_coastal)
 #############################################
 
 # create stack raster
-risk.stack <- c(#pop.world.proj, # human population in 2015
-                #pop.world.change.proj.resample, # population change compare to 1994 - 2010
-                specie.grav.resample, # species gravity
+risk.stack.1 <- c(specie.grav.resample, # species gravity
                 depriv.proj.resample.coastal, #deprivation poverty index 
-               # mean.temp.change.resample, # climate terrestrial
                 marine.dep.nutri.coastal, # nutrional dependency to marine resources
                 marine.dep.econ.coastal,#, # economic dependency to marine resources
                 Voice_Account.coastal, # voice account WB
                 Polit_stab.coastal,# political stab
-                Gov_Effect_coastal, # gov effectiveness
-                Reg_quality_coastal,  #regularoty quality "
+                Gov_Effect_coastal) # gov effectiveness
+risk.stack.2 <- c(Reg_quality_coastal,  #regularoty quality "
                 Rule_Law_coastal, # "rule of law"
                 Control_Corr_coastal, # control corruption
                 disaster.prep, # nd gain disaster prep
-                SLR.score_coastal, # SLR change
+               low.lying.SLR.proj.resample.coastal,# low lying areas
+                pop.world.proj.coastal, # human population in 2015
                ineq.score_coastal)  # gender inequality
 
 #   # rename variables
-names(risk.stack) <- c("mean.count.grav.V2.log","povmap.grdi.v1",
+names(risk.stack.1) <- c("mean.count.grav.V2","povmap.grdi.v1",
                        "Nutritional.dependence","Economic.dependence",
-                       "Voice_account","Political_stab","Gov_effect","Reg_quality","Rule_law","control_corr",
-                       "disaster_prep","SLR_change","gender.ineq")
+                       "Voice_account","Political_stab","Gov_effect")
+
+names(risk.stack.2) <- c("Reg_quality","Rule_law","control_corr",
+                       "disaster_prep","lla.all","pop.world.coastal","gender.ineq")
 
 # clean space of large raster that are not necessary anymore
 rm(pop.world.nc,pop.world,specie.grav,specie.grav.proj,pop.world.nc.change,pop.world.change.proj,
    pop.world.change.proj.resample,pop.world.change.proj.resample.coastal,mean.SLR.change,
    mean.SLR.change.proj,mean.SLR.change.proj.resample,mean.SLR.change.proj.coastal,depriv.proj.resample.coastal,
    dis.prep.score,dis.prep_score_coastal,dis.prep_score_NA.sf.proj.2015,fsi.sf.proj.ineq.gender.coastal,fsi.sf.proj.ineq.gender,
-   marine.dep.econ.coastal,marine.dep.nutri.coastal, pop.world.proj.coastal,Reg_quality_coastal,Rule_Law_coastal,SLR.score_coastal,SLR.score_NA.sf.proj.2015);gc()
+   marine.dep.econ.coastal,marine.dep.nutri.coastal, pop.world.proj.coastal,Reg_quality_coastal,Rule_Law_coastal,SLR.score_coastal,SLR.score_NA.sf.proj.2015,
+   Control_Corr,Control_Corr_coastal,countries.data.sf.proj.vt,disaster.prep,disaster.prep_coastal,
+   Economic.dependence.log,Gov_Effect,Gov_Effect_coastal,low.lying.SLR,low.lying.SLR.crop,low.lying.SLR.proj,low.lying.SLR.proj.resample,
+   low.lying.SLR.proj.resample.coastal,low.lying.SLR.proj.resample.coastal.10,low.lying.SLR.resample,mean.count.grav.V2.log);gc()
 
 # save raster 
-terra::writeRaster(risk.stack,here("data","derived-data","Spatial rasters","risk_stack.tif"),overwrite=T)
+terra::writeRaster(risk.stack.1,here("data","derived-data","Spatial rasters","risk_stack_1.tif"),overwrite=T)
+terra::writeRaster(risk.stack.2,here("data","derived-data","Spatial rasters","risk_stack_2.tif"),overwrite=T)
 
 # load 
-rm(risk.stack)
-risk.stack <- rast(here::here("data","derived-data","Spatial rasters","risk_stack.tif"))
+rm(risk.stack.1)
+risk.stack.1 <- rast(here::here("data","derived-data","Spatial rasters","risk_stack_1.tif"))
+rm(risk.stack.2)
+risk.stack.2 <- rast(here::here("data","derived-data","Spatial rasters","risk_stack_1.tif"))
 
 # check normality of raster values
-x <- values(risk.stack[[13]]); # log the 1,4,12
-    plot(hist(x))
-    plot(hist(log(x)))
-
+# x <- values(risk.stack[[4]]); # log the 1,4,12
+#     plot(hist(x))
+#     plot(hist(log(x)))
+#     
+# log certain raster
+mean.count.grav.V2.log <- app(risk.stack.1$mean.count.grav.V2,log1p)
+Economic.dependence.log <- app(risk.stack.1$Economic.dependence,log1p)
+pop.world.coastal.log <- app(pop.world.proj.coastal,log1p)
+gc()
 # recreate scale raster stack
-mean.count.grav.V2.log.sc <- rescale01(risk.stack$mean.count.grav.V2.log); gc() #1
-povmap.grdi.v1.sc <- rescale01(risk.stack$povmap.grdi.v1); gc() #2
-Nutritional.dependence.sc <- rescale01(risk.stack$Nutritional.dependence); gc() #3
-Economic.dependence.sc <- rescale01(risk.stack$Economic.dependence); gc() #4
-Voice_account.sc <- rescale01(risk.stack$Voice_account); gc() #5
-Political_stab.sc <- rescale01(risk.stack$Political_stab); gc() #6
-Gov_effect.sc <- rescale01(risk.stack$Gov_effect); gc() #7
-Reg_quality.sc <- rescale01(risk.stack$Reg_quality); gc() #8
-Rule_law.sc <- rescale01(risk.stack$Rule_law); gc() #9
-control_corr.sc <- rescale01(risk.stack$control_corr); gc() #10
-disaster_prep.sc <- rescale01(risk.stack$disaster_prep); gc() #11
-SLR_change.sc <- rescale01(risk.stack$SLR_change); gc() #12
-gender.ineq.sc <- rescale01(risk.stack$gender.ineq); gc() #13
+mean.count.grav.V2.log.sc <- rescale01(mean.count.grav.V2.log); gc() #1
+#hist(values(mean.count.grav.V2.log.sc)); gc()
+povmap.grdi.v1.sc <- rescale01(risk.stack.1$povmap.grdi.v1); gc() #2
+#hist(values(povmap.grdi.v1.sc)); gc()
+Nutritional.dependence.sc <- rescale01(risk.stack.1$Nutritional.dependence); gc() #3
+#hist(values(Nutritional.dependence.sc)); gc()
+Economic.dependence.sc <- rescale01(Economic.dependence.log); gc() #4
+#hist(values(Economic.dependence.sc)); gc()
+Voice_account.sc <- rescale01(risk.stack.1$Voice_account); gc() #5
+#hist(values(Voice_account.sc)); gc()
+Political_stab.sc <- rescale01(risk.stack.1$Political_stab); gc() #6
+#hist(values(Political_stab.sc)); gc()
+Gov_effect.sc <- rescale01(risk.stack.1$Gov_effect); gc() #7
+#hist(values(Gov_effect.sc)); gc()
+Reg_quality.sc <- rescale01(risk.stack.2$Reg_quality); gc() #8
+#hist(values(Reg_quality.sc)); gc()
+Rule_law.sc <- rescale01(risk.stack.2$Rule_law); gc() #9
+#hist(values(Rule_law.sc)); gc()
+control_corr.sc <- rescale01(risk.stack.2$control_corr); gc() #10
+#hist(values(control_corr.sc)); gc()
+disaster_prep.sc <- rescale01(risk.stack.2$disaster_prep); gc() #11
+#hist(values(disaster_prep.sc)); gc()
+pop.world.coastal.log.sc <- rescale01(pop.world.coastal.log); gc() #12
+#hist(values(pop.lla.10m.log.sc)); gc()
+gender.ineq.sc <- rescale01(risk.stack.2$gender.ineq); gc() #13
+#hist(values(gender.ineq.sc)); gc()
+
+# remove certain raster
+rm(mean.count.grav.V2.log,Economic.dependence.log,pop.lla.10m.log)
 
  # free memory
  rm(risk.stack); gc()
  
 # create a stack raster of normalized raster
- risk.stack.sc <- c(mean.count.grav.V2.log.sc,
+ risk.stack.sc.1 <- c(mean.count.grav.V2.log.sc,
                     povmap.grdi.v1.sc,
                     Nutritional.dependence.sc,
                     Economic.dependence.sc,
                     Voice_account.sc,
-                    Political_stab.sc,
-                    Gov_effect.sc,
+                    Political_stab.sc);gc()
+ # names(risk.stack.sc.1) <- c("mean.count.grav.V2","povmap.grdi.v1",
+ #                        "Nutritional.dependence","Economic.dependence",
+ #                        "Voice_account","Political_stab")
+  names(risk.stack.sc.1)[1] <- "mean.count.grav.V2"
+  names(risk.stack.sc.1)[4] <- "Economic.dependence"
+
+ 
+ risk.stack.sc.2 <- c(Gov_effect.sc,
                     Reg_quality.sc,
                     Rule_law.sc,
                     control_corr.sc,
                     disaster_prep.sc,
-                    SLR_change.sc,
+                    lla.all,
+                    pop.world.coastal.log.sc,
                     gender.ineq.sc); gc()
+ names(risk.stack.sc.2) <- c("Gov_effect","Reg_quality","Rule_law","control_corr",
+                        "disaster_prep","lla.all","pop.world.coastal","gender.ineq")
  
+ risk.stack.lla <- c(low.lying.SLR.proj.resample.coastal,pop.world.coastal.log.sc)
+ names(risk.stack.lla) <- c("merit_leczs","pop.world.coastal")
  #summary(risk.stack.sc)
-terra::writeRaster(risk.stack.sc,here("data","derived-data","Spatial rasters","risk.stack_sc.tif"),overwrite=TRUE)
+terra::writeRaster(risk.stack.sc.1,here("data","derived-data","Spatial rasters","risk.stack_sc_1.tif"),overwrite=TRUE)
+terra::writeRaster(risk.stack.sc.2,here("data","derived-data","Spatial rasters","risk.stack_sc_2.tif"),overwrite=TRUE)
+terra::writeRaster(risk.stack.lla,here("data","derived-data","Spatial rasters","risk.stack.lla.tif"),overwrite=TRUE)

@@ -84,7 +84,7 @@ p.oecd.trend.perc.commited <- oecd.dat.sf.ctry.trend %>% filter(var == "pct.comm
   theme_classic() +
   theme(legend.position="right") 
 p.oecd.trend.perc.commited
-ggsave(here("figures","Figure1A.png"))
+ggsave(here("figures","SUPP_Figure1A.png"))
 
 # select only perc committed - lines plots
 p.oecd.trend.perc.commited.lines <- oecd.dat.sf.ctry.trend %>% filter(var == "pct.comm") %>%
@@ -123,8 +123,8 @@ df.out <- data.frame(models=character(N),
                            stringsAsFactors=FALSE) 
 
 # dataframe to save models parameters 
-N <- 5
-df.out.trend <- data.frame(CADC=c("equity","other_CADC","other_ocean_economy","total committed_investment","CADC committed_investment"),
+N <- 6
+df.out.trend <- data.frame(CADC=c("equity","other_CADC","CADC","other_ocean_economy","total committed_investment","CADC committed_investment"),
                      trend=numeric(N), 
                      coef.int.25 = numeric(N),
                      coef.int.975 = numeric(N),
@@ -138,14 +138,13 @@ df.out.trend <- data.frame(CADC=c("equity","other_CADC","other_ocean_economy","t
                      stringsAsFactors=FALSE)
 
 # equity
+library(EnvCpt)
 df.perc.eq.CADC = oecd.dat.sf.ctry.trend %>% filter(var == "pct.comm" & cadc.type == "equity CADC") %>% 
   dplyr::select(year,val)
 fit_envcpt = envcpt(df.perc.eq.CADC$val)  # Fit all models at once
 
 # AIC and weights
 df.out$models <- names(AIC(fit_envcpt))
-df.out$AIC.eq <- AIC(fit_envcpt) %>% round(2)
-df.out$AIC.weights.eq <- AICweights(fit_envcpt) %>% round(2)
 
   # save trend coeff
 df.out.trend[1,c(2,5,8)] <- round(fit_envcpt$trendar2$coefficients[2:4],2) 
@@ -157,6 +156,12 @@ df.out.trend[1,11] <- glance(fit_envcpt$trendar2)[2] %>% round(3)
 # other CADC
 df.perc.other.CADC = oecd.dat.sf.ctry.trend %>% filter(var == "pct.comm" & cadc.type == "other CADC") %>% 
   dplyr::select(year,val)
+
+ggplot(df.perc.other.CADC,aes(x = year, y = val)) +
+  stat_poly_line() +
+  stat_poly_eq(use_label(c("eq", "R2"))) +
+  geom_point()
+
 rm(fit_envcpt)
 fit_envcpt = envcpt(df.perc.other.CADC$val)  # Fit all models at once
 
@@ -172,6 +177,56 @@ df.out.trend[2,6:7] <- confint(fit_envcpt$trendar2, level=0.95)[3,]%>% round(2)
 df.out.trend[2,9:10] <- confint(fit_envcpt$trendar2, level=0.95)[4,]%>% round(2)
 df.out.trend[2,11] <- glance(fit_envcpt$trendar2)[2] %>% round(3)
 
+############ all CADC
+all.CADC.dat.sf.ctry.trend <- oecd.dat.sf.ctry.trend %>% 
+  filter(cadc.type != "other ocean economy") %>%
+  group_by(year,var) %>%
+  dplyr::summarize(val.CADC = sum(val)) %>%
+  as.data.frame()
+all.CADC.dat.sf.ctry.trend
+
+
+# check 
+oecd.dat.sf.ctry.trend %>% filter(var == "pct.comm" & cadc.type %in% c("equity CADC","other CADC")) %>% 
+  dplyr::select(year,val) %>% arrange(year)
+
+df.perc.CADC = all.CADC.dat.sf.ctry.trend %>% filter(var == "pct.comm") %>% 
+  dplyr::select(year,val.CADC)
+
+all.cadc.df <- oecd.dat.sf.ctry.trend %>% filter(var == "pct.comm" & cadc.type != "other ocean economy") %>%
+  dplyr::select(-var) %>% 
+  spread(cadc.type,val) %>%
+  mutate(CADC = rowSums(.[2:3])) %>%
+  gather(perc.comm,val.CADC,-year)
+
+ggplot(all.cadc.df,aes(x = year, y = val.CADC,color=perc.comm)) +
+  stat_poly_line() +
+  stat_poly_eq(use_label(c("eq", "R2"))) +
+  geom_point()
+
+rm(fit_envcpt.CADC)
+fit_envcpt.CADC = envcpt(df.perc.CADC$val.CADC)  # Fit all models at once
+AIC(fit_envcpt.CADC) %>% which.min()
+AICweights(fit_envcpt.CADC) 
+summary(fit_envcpt.CADC$trendar2)
+summary(fit_envcpt.CADC$trendar1)
+summary(fit_envcpt.CADC$trend)
+plot(fit_envcpt.CADC$trendar2)
+
+hist(df.perc.CADC$val.CADC)
+
+df.out$AIC.CADC <- AIC(fit_envcpt) %>% round(2)
+df.out$AIC.weights.CADC <- AICweights(fit_envcpt) %>% round(2)
+
+plot(fit_envcpt,type='fit') # plots the fits
+
+# save trend coeff
+df.out.trend[3,c(2,5,8)] <- round(fit_envcpt.CADC$trendar2$coefficients[2:4],2) 
+df.out.trend[3,3:4] <- confint(fit_envcpt.CADC$trendar2, level=0.95)[2,] %>% round(2)
+df.out.trend[3,6:7] <- confint(fit_envcpt.CADC$trendar2, level=0.95)[3,]%>% round(2)
+df.out.trend[3,9:10] <- confint(fit_envcpt.CADC$trendar2, level=0.95)[4,]%>% round(2)
+df.out.trend[3,11] <- glance(fit_envcpt.CADC$trendar2)[2] %>% round(3)
+
 # other ocean economy
 df.perc.other.eco = oecd.dat.sf.ctry.trend %>% filter(var == "pct.comm" & cadc.type == "other ocean economy") %>% 
   dplyr::select(year,val)
@@ -184,11 +239,11 @@ df.out$AIC.other.ec <- AIC(fit_envcpt) %>% round(2)
 df.out$AIC.weights.other.ec <- AICweights(fit_envcpt) %>% round(2)
 
 # save trend coeff
-df.out.trend[3,c(2,5,8)] <- round(fit_envcpt$trendar2$coefficients[2:4],2) 
-df.out.trend[3,3:4] <- confint(fit_envcpt$trendar2, level=0.95)[2,] %>% round(2)
-df.out.trend[3,6:7] <- confint(fit_envcpt$trendar2, level=0.95)[3,]%>% round(2)
-df.out.trend[3,9:10] <- confint(fit_envcpt$trendar2, level=0.95)[4,]%>% round(2)
-df.out.trend[3,11] <- glance(fit_envcpt$trendar2)[2] %>% round(3)
+df.out.trend[4,c(2,5,8)] <- round(fit_envcpt$trendar2$coefficients[2:4],2) 
+df.out.trend[4,3:4] <- confint(fit_envcpt$trendar2, level=0.95)[2,] %>% round(2)
+df.out.trend[4,6:7] <- confint(fit_envcpt$trendar2, level=0.95)[3,]%>% round(2)
+df.out.trend[4,9:10] <- confint(fit_envcpt$trendar2, level=0.95)[4,]%>% round(2)
+df.out.trend[4,11] <- glance(fit_envcpt$trendar2)[2] %>% round(3)
 
 #***********************************************************************
 
@@ -212,17 +267,18 @@ p.oecd.total.USD
 adf.test(df.total$tot.com.year) # p-value < 0.05 indicates the TS is stationary
 
 library(EnvCpt)
+rm(fit_envcpt)
 fit_envcpt = envcpt(df.total$tot.com.year)  # Fit all models at once
 
 df.out$AIC.commit.dollars <- AIC(fit_envcpt) %>% round(2)
 df.out$AIC.weights.commit.dollars <- AICweights(fit_envcpt) %>% round(2)
 
 # save trend coeff
-df.out.trend[4,c(2,5,8)] <- round(fit_envcpt$trendar2$coefficients[2:4],2) 
-df.out.trend[4,3:4] <- confint(fit_envcpt$trendar2, level=0.95)[2,] %>% round(2)
-df.out.trend[4,6:7] <- confint(fit_envcpt$trendar2, level=0.95)[3,]%>% round(2)
-df.out.trend[4,9:10] <- confint(fit_envcpt$trendar2, level=0.95)[4,]%>% round(2)
-df.out.trend[4,11] <- glance(fit_envcpt$trendar2)[2] %>% round(3)
+df.out.trend[5,c(2,5,8)] <- round(fit_envcpt$trendar2$coefficients[2:4],2) 
+df.out.trend[5,3:4] <- confint(fit_envcpt$trendar2, level=0.95)[2,] %>% round(2)
+df.out.trend[5,6:7] <- confint(fit_envcpt$trendar2, level=0.95)[3,]%>% round(2)
+df.out.trend[5,9:10] <- confint(fit_envcpt$trendar2, level=0.95)[4,]%>% round(2)
+df.out.trend[5,11] <- glance(fit_envcpt$trendar2)[2] %>% round(3)
 
 # only CADC
 rm(df.total.cadc)
@@ -237,15 +293,16 @@ df.total.cadc = oecd.dat.sf.ctry.trend %>% filter(var == "usd.comm.year") %>%
 adf.test(df.total.cadc$tot.com.year) # p-value < 0.05 indicates the TS is stationary
 
 library(EnvCpt)
+rm(fit_envcpt)
 fit_envcpt = envcpt(df.total.cadc$tot.com.year)  # Fit all models at once
 AICweights(fit_envcpt)
 
 # save trend coeff
-df.out.trend[5,c(2,5,8)] <- round(fit_envcpt$trendar2$coefficients[2:4],2) 
-df.out.trend[5,3:4] <- confint(fit_envcpt$trendar2, level=0.95)[2,] %>% round(2)
-df.out.trend[5,6:7] <- confint(fit_envcpt$trendar2, level=0.95)[3,]%>% round(2)
-df.out.trend[5,9:10] <- confint(fit_envcpt$trendar2, level=0.95)[4,]%>% round(2)
-df.out.trend[5,11] <- glance(fit_envcpt$trendar2)[2] %>% round(3)
+df.out.trend[6,c(2,5,8)] <- round(fit_envcpt$trendar2$coefficients[2:4],2) 
+df.out.trend[6,3:4] <- confint(fit_envcpt$trendar2, level=0.95)[2,] %>% round(2)
+df.out.trend[6,6:7] <- confint(fit_envcpt$trendar2, level=0.95)[3,]%>% round(2)
+df.out.trend[6,9:10] <- confint(fit_envcpt$trendar2, level=0.95)[4,]%>% round(2)
+df.out.trend[6,11] <- glance(fit_envcpt$trendar2)[2] %>% round(3)
 
 # save the dataframe 
 write.csv(df.out,here("outputs","prop_investment_models_comparisons.csv"))
@@ -262,8 +319,8 @@ oecd.dat.invest.by.subregion <- oecd.dat.sf.ctry %>%
   dplyr::summarise(usd.comm.subregion.cadc=sum(usd.comm,na.rm=T) %>% round(2),
                    usd.disb.subregion.cadc=sum(usd.disb,na.rm=T) %>% round(2)) %>%
   ungroup() %>%
-  mutate(perc.comm = round(100*usd.comm.subregion.cadc/sum(usd.comm.subregion.cadc),2), 
-         perc.disb = round(100*usd.disb.subregion.cadc/sum(usd.disb.subregion.cadc),2)) %>%
+  mutate(perc.comm = round(100*usd.comm.subregion.cadc/sum(usd.comm.subregion.cadc * !duplicated(usd.comm.subregion.cadc)),2), 
+         perc.disb = round(100*usd.disb.subregion.cadc/sum(usd.disb.subregion.cadc * !duplicated(usd.disb.subregion.cadc)),2)) %>%
   mutate(cum.perc.comm = cumsum(perc.comm), 
          cum.perc.disb = cumsum(perc.disb)) %>%
   group_by(region_un) %>%
@@ -274,8 +331,8 @@ oecd.dat.invest.by.subregion <- oecd.dat.sf.ctry %>%
   mutate(cum.invest.comm_usd.regions = cumsum(usd.comm.region.cadc * !duplicated(usd.comm.region.cadc)),
          cum.invest.disb.usd.regions = cumsum(usd.disb.region.cadc * !duplicated(usd.disb.region.cadc))) %>% 
   ungroup() %>%
-  mutate(perc.comm.regions = round(100*cum.invest.comm_usd.regions/sum(cum.invest.comm_usd.regions * !duplicated(cum.invest.comm_usd.regions)),2), 
-         perc.disb.regions = round(100*cum.invest.disb.usd.regions/sum(cum.invest.disb.usd.regions * !duplicated(cum.invest.disb.usd.regions)),2)) %>%
+  mutate(perc.comm.regions = round(100*usd.comm.region.cadc/sum(usd.comm.region.cadc * !duplicated(usd.comm.region.cadc)),2), 
+         perc.disb.regions = round(100*usd.disb.region.cadc/sum(usd.disb.region.cadc * !duplicated(usd.disb.region.cadc)),2)) %>%
   mutate(cum.perc.comm.regions = cumsum(perc.comm.regions * !duplicated(perc.comm.regions)), 
          cum.perc.disb.regions = cumsum(perc.disb.regions * !duplicated(perc.disb.regions))) %>%
   #dplyr::arrange(desc(cum.invest.comm_usd.regions)) %>%
@@ -350,7 +407,6 @@ oecd.dat.invest.by.country.dist <- oecd.dat.invest.by.country %>%
 ymax=max(oecd.dat.invest.by.country.dist$tot.usd.comm.ctry)
 
 # plot
-
 oecd.dat.invest.by.country.plot <- ggplot(oecd.dat.invest.by.country,
                                           aes(x=reorder(name_en,-usd.comm.ctry.cadc))) +
   geom_bar(position="stack", stat="identity",aes(y=usd.comm.ctry.cadc,fill=cadc.type)) +
@@ -365,8 +421,6 @@ oecd.dat.invest.by.country.plot <- ggplot(oecd.dat.invest.by.country,
   theme_bw()
 oecd.dat.invest.by.country.plot # correct st helena
 ggsave(here("figures","SUPP_Figure_country_invest.png"))
-
-
 
 #################################################
 # Extra
@@ -402,9 +456,9 @@ p.oecd.trend.usd.commited <- oecd.dat.sf.ctry.trend %>% filter(var == "usd.comm.
   labs(fill = "CADC types") +
   xlim(2010,2021) +
   theme_classic() +
-  theme(legend.position="right") 
+  theme(legend.position=c(0.2,0.9)) 
 p.oecd.trend.usd.commited
-ggsave(here("figures","SUPP_Figure1A.png"))
+ggsave(here("figures","Figure1A_invest.png"))
 
 # plot temporal trend
 p.oecd.trend <- oecd.trend %>% 
@@ -452,7 +506,7 @@ p.map.2021.cum.ctry <- ggplot(data =  projected.world) +
   labs(fill = "Investment ($)") +
   theme_bw()
 p.map.2021.cum.ctry
-ggsave(here("figures","Figure1B.png"),p.map.2021.cum.ctry)
+ggsave(here("figures","SUPP_Figure1B.png"),p.map.2021.cum.ctry)
 
 ######################### FIGURE 1C and 1D #############################
 
@@ -480,24 +534,68 @@ oecd.dat.sf.ctry.equity.commit <- oecd.dat.sf.ctry.equity %>%
 # load composite scores
 df.risk.stack.sc.ctry.ind.coastal <- readRDS(here("data","derived-data","df.cont.inequity.compo.coastal.scores.rds"))
 
+# load trend investment by country
+df.out.trend.ctr <- read.csv(here("outputs","prop_investment_trend_coeff_by_ctry.csv"))
+
 # SUMMARIZE one indicator by country
 rm(cont.ineq.ctry)
 cont.ineq.ctry <- df.risk.stack.sc.ctry.ind.coastal %>%
   dplyr::group_by(iso_a3) %>%
   dplyr::mutate(cont.eq.score.mean = mean(risk.mat.score.mean.without.dprep,na.rm=T) %>% round(2),
             cont.eq.sd =  sd(risk.mat.score.mean.without.dprep,na.rm=T) %>% round(2)) %>%
+  mutate(cont.eq.score.CV = 100*(cont.eq.sd/cont.eq.score.mean) %>% round(4))%>%
   ungroup() %>%
-  dplyr::select(iso_a3,cont.eq.score.mean,cont.eq.sd) %>%
+  dplyr::select(iso_a3,cont.eq.score.mean,cont.eq.sd,cont.eq.score.CV) %>%
   distinct() %>%
   dplyr::filter(!is.na(cont.eq.score.mean)) %>%
   as.data.frame()
 
 head(cont.ineq.ctry)
 dim(cont.ineq.ctry)
+summary(cont.ineq.ctry)
 
 # join world
 cont.ineq.ctry.sf <- projected.world %>%
   left_join(cont.ineq.ctry,by="iso_a3")
+
+# add trend data
+cont.ineq.ctry.sf <- cont.ineq.ctry.sf %>%
+  left_join(df.out.trend.ctr,by="iso_a3")
+
+
+# add add color columns
+cont.ineq.ctry.sf <- cont.ineq.ctry.sf %>%
+  mutate(significant.50 = as.factor(significant.50),
+         significant.90 = as.factor(significant.90)) %>%
+  mutate(color.vect.50 = ifelse(trend > 0 & significant.50 == "S","pos",
+                              ifelse(trend < 0 & significant.50 == "S","neg",
+                                     ifelse(trend > 0 & significant.50 == "NS","NS.pos",
+                                            ifelse(trend < 0 & significant.50 =="NS","NS.neg",NA))))) %>%
+  mutate(color.vect.90 = ifelse(trend > 0 & significant.90 == "S","pos",
+                                ifelse(trend < 0 & significant.90 == "S","neg",
+                                  ifelse(trend > 0 & significant.90 == "NS","NS.pos",
+                                    ifelse(trend < 0 & significant.90 =="NS","NS.neg",NA)))))
+# remove NAs from trend color
+cont.ineq.ctry.sf$color.vect.50 <- addNA(cont.ineq.ctry.sf$color.vect.50)  
+cont.ineq.ctry.sf$color.vect.90 <- addNA(cont.ineq.ctry.sf$color.vect.90)  
+
+# change order levels
+levels(cont.ineq.ctry.sf$color.vect.50) <- c("Negative","Negative.uncertain","Positive.uncertain","Positive","NA")
+levels(cont.ineq.ctry.sf$color.vect.90) <- c("Negative","Negative.uncertain","Positive.uncertain","Positive","NA")
+cont.ineq.ctry.sf$color.vect.50 <- factor(cont.ineq.ctry.sf$color.vect.50 ,levels=c("Negative","Negative.uncertain","Positive.uncertain","Positive","NA"))
+cont.ineq.ctry.sf$color.vect.90 <- factor(cont.ineq.ctry.sf$color.vect.90 ,levels=c("Negative","Negative.uncertain","Positive.uncertain","Positive","NA"))
+
+# reduce number of factors
+cont.ineq.ctry.sf$color.vect.50.V2 <- fct_collapse(cont.ineq.ctry.sf$color.vect.50, Uncertain = c("Negative.uncertain", "Positive.uncertain"))
+cont.ineq.ctry.sf$color.vect.90.V2 <- fct_collapse(cont.ineq.ctry.sf$color.vect.90, Uncertain = c("Negative.uncertain", "Positive.uncertain"))
+
+tail(cont.ineq.ctry.sf)
+dim(cont.ineq.ctry.sf)
+
+# remove NA in contextual equity
+cont.ineq.ctry.sf <- cont.ineq.ctry.sf %>%
+  drop_na(cont.eq.score.mean) %>%
+  drop_na(usd.comm.year.CADC.total)
 
 p.map.ctry.equity <- ggplot(data =  projected.world) +
   geom_sf(color="black",fill = "white") +
@@ -507,76 +605,262 @@ p.map.ctry.equity <- ggplot(data =  projected.world) +
   labs(colour = "Mean contextual equity") +
   theme_bw()
 p.map.ctry.equity
-ggsave(here("figures","Figure1C.png"),p.map.ctry.equity)
+ggsave(here("figures","SUPP_Figure1C.png"),p.map.ctry.equity)
 
-# add contextual inequity
-rm(oecd.dat.sf.ctry.equity.commit.ineq)
-oecd.dat.sf.ctry.equity.commit.ineq <- oecd.dat.sf.ctry.equity.commit %>%
-  full_join(cont.ineq.ctry,by="iso_a3") 
-  # mutate(tot.project.CADC = replace_na(tot.project.CADC, 0)) %>%
-  # mutate(tot.project.eq = replace_na(tot.project.eq, 0)) %>%
-  # mutate(perc.equi = replace_na(perc.equi, 0)) %>%
-  # mutate(cum.usd.comm = replace_na(cum.usd.comm, 0))
-summary(oecd.dat.sf.ctry.equity.commit.ineq)
+### chloropeth map mean cont inequity and commited investment
+## install just cowplot and sf
+install.packages(c("cowplot"))
+library(cowplot)
+## install all suggested dependencies
+install.packages("biscale")
 
-x <- oecd.dat.sf.ctry.equity.commit.ineq %>% 
-  filter(!is.na(tot.project.CADC))
-hist(x$cont.eq.score.mean)
-oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cont.eq.score.mean > 0.66)
+library(biscale)
 
-# CADC invest - contextual ineq - log
-sc.risk.CADC.dollars.log <- ggplot(oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cadc.type=="equity CADC"),aes(x=log10(cum.usd.comm+1),y=cont.eq.score.mean,label=name_en)) +
-  geom_point()+
-  geom_text_repel() +
-  #geom_smooth(method="lm") +
-  #scale_color_gradient(low="blue", high="red")+
-  xlab("log(Total investment by country) ($)") +
-  ylab("Average contextual inequity by country") +
-  ylim(0,0.7) + #   xlim(0,1)  + 
-  theme(legend.position = "bottom")+
-  theme_bw()
-sc.risk.CADC.dollars.log
+# create classes
+N <- 4
+pal = "PinkGrn"
+data.eq <- bi_class(cont.ineq.ctry.sf, x = usd.comm.year.CADC.total, y = cont.eq.score.mean, style = "jenks", dim = N)
+
+break_vals.eq <- bi_class_breaks(cont.ineq.ctry.sf, style = "jenks",
+                              x = usd.comm.year.CADC.total, y = cont.eq.score.mean, dim = N, dig_lab = c(x = 4, y = 5),
+                              split = TRUE)
+
+map <- ggplot(data =  projected.world) +
+  geom_sf(color="black",fill = "white") +
+  geom_sf(data = data.eq, mapping = aes(fill = bi_class), color = "black", size = 0.1, show.legend = FALSE) +
+  bi_scale_fill(pal = pal, dim = N) +
+  theme(plot.margin = margin(-2, 0, -2, 0, "cm"))+
+  bi_theme()
+map
+
+legend <- bi_legend(pal = pal,
+                    dim = N,
+                    xlab = "Committed investment (millions $) ",
+                    ylab = "Average Contextual Vulnerability ",
+                    size = 8,
+                    breaks = break_vals.eq)
+
+finalPlot.cont.ineq <- ggdraw() +
+  draw_plot(map, 0, 0, 1, 1) +
+  draw_plot(legend, 0.01, .2, 0.3, 0.3)
+finalPlot.cont.ineq
+ggsave(here("figures","Figure1B_chloropeth.png"),finalPlot.cont.ineq,width=8,height = 8)
+
+
+g <- ggplot_build(map)
+
+colors.legend <- cbind(g$data[[2]]["fill"],g$data[[2]]["group"],g$data[[2]]["geometry"]) %>%
+  distinct() %>%
+  arrange(group)
+
+test.color <- data.eq %>% 
+  dplyr::select(iso_a3,geometry) %>%
+  distinct()
+
+test.color <- test.color %>%
+  left_join(colors.legend,by="geometry")
+
+# # CADC invest - contextual ineq - log
+# sc.risk.CADC.dollars.log <- ggplot(oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cadc.type=="equity CADC"),aes(x=log10(cum.usd.comm+1),y=cont.eq.score.mean,label=name_en)) +
+#   geom_point()+
+#   geom_text_repel() +
+#   #geom_smooth(method="lm") +
+#   #scale_color_gradient(low="blue", high="red")+
+#   xlab("log(Total investment by country) ($)") +
+#   ylab("Average contextual inequity by country") +
+#   ylim(0,0.7) + #   xlim(0,1)  + 
+#   theme(legend.position = "bottom")+
+#   theme_bw()
+# sc.risk.CADC.dollars.log
 
 # CADC invest - contextual ineq
-sc.risk.CADC.dollars <- ggplot(oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cadc.type=="equity CADC"),aes(x=cum.usd.comm,y=cont.eq.score.mean,label=name_en)) +
+# CI 50%
+sc.risk.CADC.dollars.50 <- ggplot(cont.ineq.ctry.sf,aes(x=usd.comm.year.CADC.total,y=cont.eq.score.mean,label=name_en,color=color.vect.50.V2,size=abs(trend))) +
   geom_point()+
-  geom_text_repel() +
+  geom_text_repel( size = 4,force=4) +
   #geom_smooth(method="lm") +
   #scale_color_gradient(low="blue", high="red")+
+  geom_abline(slope=0,intercept=0.5,col="black",linetype=2)+
   xlab("Total investment by country ($)") +
-  ylab("Average contextual inequity by country") +
+  ylab("Average contextual vulnerability by country") +
   ylim(0,0.75) + #   xlim(0,1)  + 
-  theme(legend.position = "bottom")+
-  theme_bw()
-sc.risk.CADC.dollars
-ggsave(here("figures","Figure1C.png"),sc.risk.CADC.dollars)
+  scale_color_manual(values = c("firebrick4","grey","blue4","ivory")) +
+  labs(color = "Investment direction",size="Investment level (millions USD/year)") +
+  theme(legend.position = c(0.7, 0.1),legend.direction="horizontal",
+        panel.background = element_rect(fill = "white",
+                                        colour = "grey",
+                                        size = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "lightgrey"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "lightgrey"),
+        legend.box.background = element_rect(colour = "black"))
+
+sc.risk.CADC.dollars.50
+ggsave(here("figures","Figure1C_trend_50CI.simple.png"),sc.risk.CADC.dollars.50,width=8,height = 8)
+# CI 90%
+sc.risk.CADC.dollars.90 <- ggplot(cont.ineq.ctry.sf,aes(x=usd.comm.year.CADC.total,y=cont.eq.score.mean,label=name_en,color=color.vect.90.V2,size=abs(trend))) +
+  geom_point()+
+  geom_text_repel( size = 4,force=4,max.overlaps=10) +
+  #geom_smooth(method="lm") +
+  #scale_color_gradient(low="blue", high="red")+
+  geom_abline(slope=0,intercept=0.5,col="black",linetype=2)+
+  xlab("Total investment by country ($)") +
+  ylab("Average contextual vulnerability by country") +
+  ylim(0,0.75) + #   xlim(0,1)  + 
+  scale_color_manual(values = c("firebrick4","darkgrey","blue4","lightgrey")) +
+  labs(color = "Investment direction",size="Investment level (millions USD/year)") +
+  theme(legend.position = c(0.5, 0.1),legend.direction="horizontal",
+        panel.background = element_rect(fill = "white",
+                                        colour = "grey",
+                                        size = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "lightgrey"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "lightgrey"),
+        legend.box.background = element_rect(colour = "black"))
+
+sc.risk.CADC.dollars.90
+ggsave(here("figures","Figure1C_trend_90CI.simple.png"),sc.risk.CADC.dollars.90,width=8,height = 8)
+
+# # CI 50%
+# sc.risk.CADC.dollars.50 <- ggplot(cont.ineq.ctry.sf,aes(x=usd.comm.year.CADC.total,y=cont.eq.score.mean,label=name_en,color=color.vect.50,size=abs(trend))) +
+#   geom_point()+
+#   geom_text_repel( size = 4,force=4) +
+#   #geom_smooth(method="lm") +
+#   #scale_color_gradient(low="blue", high="red")+
+#   geom_abline(slope=0,intercept=0.5,col="black",linetype=2)+
+#   xlab("Total investment by country ($)") +
+#   ylab("Average contextual inequity by country") +
+#   ylim(0,0.75) + #   xlim(0,1)  + 
+#   scale_color_manual(values = c("firebrick4","indianred2","lightblue2","blue4","ivory")) +
+#   labs(color = "Investment direction",size="Investment level (millions USD/year)") +
+#   theme(legend.position = c(0.7, 0.1),legend.direction="horizontal",
+#         panel.background = element_rect(fill = "white",
+#                                         colour = "grey",
+#                                         size = 0.5, linetype = "solid"),
+#         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+#                                         colour = "lightgrey"), 
+#         panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+#                                         colour = "lightgrey"),
+#         legend.box.background = element_rect(colour = "black"))
+# 
+# sc.risk.CADC.dollars.50
+# ggsave(here("figures","Figure1C_trend_50CI.png"),sc.risk.CADC.dollars.50,width=10,height=10)
+# # CI 90%
+# sc.risk.CADC.dollars.90 <- ggplot(cont.ineq.ctry.sf,aes(x=usd.comm.year.CADC.total,y=cont.eq.score.mean,label=name_en,color=color.vect.90,size=abs(trend))) +
+#   geom_point()+
+#   geom_text_repel( size = 4,force=4,max.overlaps=10) +
+#   #geom_smooth(method="lm") +
+#   #scale_color_gradient(low="blue", high="red")+
+#   geom_abline(slope=0,intercept=0.5,col="black",linetype=2)+
+#   xlab("Total investment by country ($)") +
+#   ylab("Average contextual inequity by country") +
+#   ylim(0,0.75) + #   xlim(0,1)  + 
+#   scale_color_manual(values = c("firebrick4","indianred2","lightblue2","blue4","ivory")) +
+#   labs(color = "Investment direction",size="Investment level (millions USD/year)") +
+#   theme(legend.position = c(0.5, 0.1),legend.direction="horizontal",
+#         panel.background = element_rect(fill = "white",
+#                                         colour = "grey",
+#                                         size = 0.5, linetype = "solid"),
+#         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+#                                         colour = "lightgrey"), 
+#         panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+#                                         colour = "lightgrey"),
+#         legend.box.background = element_rect(colour = "black"))
+# 
+# sc.risk.CADC.dollars.90
+# ggsave(here("figures","Figure1C_trend_90CI.png"),sc.risk.CADC.dollars.90,width=10,height=10)
+
+# # logged
+# sc.risk.CADC.dollars.log <- ggplot(cont.ineq.ctry.sf,aes(x=log10(usd.comm.year.CADC.total),y=cont.eq.score.mean,label=name_en,color=color.vect,size=abs(trend))) +
+#   geom_point()+
+#   geom_text_repel( size = 4,force=4) +
+#   #geom_smooth(method="lm") +
+#   #scale_color_gradient(low="blue", high="red")+
+#   geom_abline(slope=0,intercept=0.5,col="black",linetype=2)+
+#   xlab("Total investment by country ($)") +
+#   ylab("Average contextual inequity by country") +
+#   ylim(0,0.75) + #   xlim(0,1)  + 
+#   scale_color_manual(values = c("firebrick4","darkgrey","blue4")) +
+#   labs(color = "Investment trend",size="Investment level") +
+#   theme(legend.position = c(0.7, 0.1),legend.direction="horizontal",
+#         panel.background = element_rect(fill = "white",
+#                                         colour = "grey",
+#                                         size = 0.5, linetype = "solid"),
+#         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+#                                         colour = "lightgrey"), 
+#         panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+#                                         colour = "lightgrey"),
+#         legend.box.background = element_rect(colour = "black"))
+# 
+# sc.risk.CADC.dollars.log
+# ggsave(here("figures","Figure1C_trend_log.png"),sc.risk.CADC.dollars.log,width=10,height=10)
 
 # CADC risk - equity
+  # join contextual vulnerability
+oecd.dat.sf.ctry.equity.commit.vulnerab <- oecd.dat.sf.ctry.equity.commit %>%
+  left_join(data.eq %>% st_drop_geometry() %>% dplyr::select(iso_a3,cont.eq.score.mean,cont.eq.sd,cont.eq.score.CV,bi_class))
 
-CADC.risk.eq.dollars <- ggplot(oecd.dat.sf.ctry.equity.commit.ineq %>% filter(cadc.type=="equity CADC"),aes(x=perc.equi,y=cont.eq.score.mean,label=name_en)) +
-  geom_point(aes(size=cum.usd.comm,color=cum.usd.comm)) +
-  scale_color_viridis_c(option = "plasma") + 
+oecd.dat.sf.ctry.equity.commit.vulnerab <- oecd.dat.sf.ctry.equity.commit.vulnerab %>%
+  left_join(test.color,by="iso_a3") %>%
+  filter(!is.na(cont.eq.score.mean)) %>%
+  filter(cadc.type=="equity CADC") %>%
+  droplevels()
+oecd.dat.sf.ctry.equity.commit.vulnerab$fill
+
+library(loon)
+l_colorName(c("#FFFF00000000", "#FF00FF", "blue"))
+oecd.dat.sf.ctry.equity.commit.vulnerab$colorname <-  l_colorName(as.character(oecd.dat.sf.ctry.equity.commit.vulnerab$fill))
+
+# create color scale
+color.biclass <- oecd.dat.sf.ctry.equity.commit.vulnerab %>%
+  dplyr::select(bi_class,fill) %>%
+  distinct() %>%
+  mutate(bi_class = as.factor(bi_class))
+
+CADC.risk.eq.dollars <- ggplot(oecd.dat.sf.ctry.equity.commit.vulnerab %>% filter(cadc.type=="equity CADC"),aes(x=perc.equi,y=cont.eq.score.mean,label=name_en)) +
+  geom_point(aes(colour = colorname),size=5) +
+  scale_color_identity() +
  # scale_size_continuous(limits=c(2, 5), breaks=seq(2, 5, by=0.5))
  # scale_color_gradient(low="blue", high="red",name = "Investment ($)")+
   xlab("Equity (% total of CADC projects)") +
-  geom_text_repel() +
-  ylab("Average contextual inequity by country") +
+  geom_text_repel(force_pull=2) +
+  ylab("Average contextual vulnerability by country") +
   xlim(0,50) +  ylim(0,0.75) +
   geom_vline(xintercept=50,linetype = 2)+
   geom_hline(yintercept=0.5,linetype = 2)+
-  guides(color = guide_legend(), size = guide_legend()) +
-  theme(legend.position = "bottom")
+  theme_bw()
 CADC.risk.eq.dollars
-ggsave(here("figures","Figure1D.png"),CADC.risk.eq.dollars)
+ggsave(here("figures","Figure1D.png"),CADC.risk.eq.dollars,width=8,height = 8)
 
 # full panel
-CADC.full.panel.1 <- ggarrange(p.oecd.trend.perc.commited,
-                             p.map.2021.cum.ctry,
-                             p.map.ctry.equity,
+CADC.full.panel.1 <- ggarrange(p.oecd.trend.usd.commited,
+                               finalPlot.cont.ineq,
+                               sc.risk.CADC.dollars.90,
                              CADC.risk.eq.dollars,
                              labels=c("a","b","c","d"),ncol=2,nrow=2)
-ggsave(here("figures","CADC.risk.equity.ABCD_1.pdf"),CADC.full.panel.1,width=10,height=10)
-ggsave(here("figures","CADC.risk.equity.ABCD_1.png"),CADC.full.panel.1,width=10,height=10)
+ggsave(here("figures","CADC.risk.equity.ABCD_1.pdf"),CADC.full.panel.1,width=12,height=12)
+ggsave(here("figures","CADC.risk.equity.ABCD_1.tiff"),CADC.full.panel.1,width=12,height=12)
+
+# three panel
+CADC.full.panel.2 <- ggarrange(finalPlot.cont.ineq,
+                               ggarrange(sc.risk.CADC.dollars.90,
+                               CADC.risk.eq.dollars,labels=c("B","C")),
+                               nrow = 2, 
+                               labels = "A",align="hv")
+ggsave(here("figures","CADC.risk.equity.ABC_2.pdf"),CADC.full.panel.2,width=10,height=10)
+ggsave(here("figures","CADC.risk.equity.ABC_2.tiff"),CADC.full.panel.2,width=10,height=10)
+
+# using draw_plot
+CADC.full.panel.3 <-ggdraw() +
+  draw_plot(finalPlot.cont.ineq, x = 0, y = .5, width = 1, height = .5) +
+  draw_plot(sc.risk.CADC.dollars.90, x = 0, y = 0, width = .5, height = .5) +
+  draw_plot(CADC.risk.eq.dollars, x = 0.5, y = 0, width = 0.5, height = 0.5) +
+  draw_plot_label(label = c("A", "B", "C"), size = 15,
+                  x = c(0, 0, 0.5), y = c(1, 0.5, 0.5))
+ggsave(here("figures","CADC.risk.equity.ABC_3.pdf"),CADC.full.panel.3,width=12,height=12)
+ggsave(here("figures","CADC.risk.equity.ABC_3.png"),CADC.full.panel.3,width=12,height=12)
 
 # full panel
 CADC.full.panel.2 <- ggarrange(p.oecd.trend.perc.commited,
